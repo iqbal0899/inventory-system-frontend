@@ -106,6 +106,13 @@ function RequestForm({
         </div>
       )}
 
+      <RequestItemTable
+        products={products}
+        items={items}
+        loading={loading}
+        onRemove={handleRemoveItem}
+      />
+
       <div className={styles.note}>
         <label htmlFor="request-note">
           Catatan
