@@ -1,7 +1,9 @@
 import { Check, X } from "lucide-react";
+
 import Button from "../common/button";
 import Modal from "../common/modal";
 import Loading from "../common/loading";
+
 import styles from "../../css/requestAction.module.css";
 
 function RequestAction({
@@ -18,11 +20,43 @@ function RequestAction({
 
   const isApprove = action === "approve";
 
+  const items =
+    request.items ||
+    request.requestItems ||
+    [];
+
+  const totalQuantity =
+    items.length > 0
+      ? items.reduce(
+          (total, item) =>
+            total + Number(item.quantity || 0),
+          0
+        )
+      : Number(request.quantity || 0);
+
+  const productNames =
+    items.length > 0
+      ? items
+          .map(
+            (item) =>
+              item.product?.name ||
+              item.productName ||
+              "-"
+          )
+          .join(", ")
+      : request.product?.name ||
+        request.product ||
+        "-";
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={isApprove ? "Setujui Request" : "Tolak Request"}
+      title={
+        isApprove
+          ? "Setujui Request"
+          : "Tolak Request"
+      }
       size="small"
     >
       {loading ? (
@@ -48,17 +82,41 @@ function RequestAction({
 
           <p>
             Request{" "}
-            <strong>{request.id}</strong> untuk produk{" "}
-            <strong>
-              {request.product?.name ||
-                request.product ||
-                "-"}
-            </strong>{" "}
+            <strong>{request.id}</strong>{" "}
+            untuk produk{" "}
+            <strong>{productNames}</strong>{" "}
             sebanyak{" "}
             <strong>
-              {request.quantity ?? 0} unit
-            </strong>.
+              {totalQuantity} unit
+            </strong>
+            .
           </p>
+
+          {items.length > 1 && (
+            <div className={styles.items}>
+              {items.map((item, index) => (
+                <div
+                  className={styles.item}
+                  key={
+                    item.id ||
+                    `${item.productId}-${index}`
+                  }
+                >
+                  <span>
+                    {item.product?.name ||
+                      item.productName ||
+                      "-"}
+                  </span>
+
+                  <strong>
+                    {item.quantity ?? 0}{" "}
+                    {item.product?.unit ||
+                      "pcs"}
+                  </strong>
+                </div>
+              ))}
+            </div>
+          )}
 
           <div className={styles.actions}>
             <Button
@@ -71,11 +129,19 @@ function RequestAction({
 
             <Button
               type="button"
-              variant={isApprove ? "success" : "danger"}
+              variant={
+                isApprove
+                  ? "success"
+                  : "danger"
+              }
               loading={loading}
-              onClick={() => onConfirm?.(request)}
+              onClick={() =>
+                onConfirm?.(request)
+              }
             >
-              {isApprove ? "Setujui" : "Tolak"}
+              {isApprove
+                ? "Setujui"
+                : "Tolak"}
             </Button>
           </div>
         </div>

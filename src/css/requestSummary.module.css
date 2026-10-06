@@ -1,0 +1,50 @@
+.container {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 8px;
+  background: #f3f4f6;
+  color: #374151;
+  flex-shrink: 0;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.content span {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.content strong {
+  font-size: 20px;
+  font-weight: 700;
+  color: #111827;
+}
+
+@media (max-width: 640px) {
+  .container {
+    grid-template-columns: 1fr;
+  }
+}

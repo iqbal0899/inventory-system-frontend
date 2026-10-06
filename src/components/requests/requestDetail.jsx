@@ -1,5 +1,6 @@
 import Modal from "../common/modal";
 import Button from "../common/button";
+
 import styles from "../../css/requestDetail.module.css";
 
 function RequestDetail({
@@ -22,6 +23,27 @@ function RequestDetail({
 
   const isPending = request.status === "pending";
 
+  const items =
+    request.items ||
+    request.requestItems ||
+    [];
+
+  const requester =
+    request.requester?.username ||
+    request.user?.username ||
+    request.requester ||
+    request.user ||
+    "-";
+
+  const requestDate =
+    request.date ||
+    request.createdAt ||
+    request.requestedAt;
+
+  const note =
+    request.note ||
+    request.reason;
+
   return (
     <Modal
       isOpen={isOpen}
@@ -32,41 +54,25 @@ function RequestDetail({
       <div className={styles.detail}>
         <div className={styles.item}>
           <span>ID Request</span>
-          <strong>{request.id || "-"}</strong>
-        </div>
-
-        <div className={styles.item}>
-          <span>Produk</span>
           <strong>
-            {request.product?.name ||
-              request.product ||
-              "-"}
-          </strong>
-        </div>
-
-        <div className={styles.item}>
-          <span>Jumlah</span>
-          <strong>
-            {request.quantity ?? 0} unit
+            {request.id || "-"}
           </strong>
         </div>
 
         <div className={styles.item}>
           <span>Requester</span>
           <strong>
-            {request.requester?.username ||
-              request.requester ||
-              "-"}
+            {requester}
           </strong>
         </div>
 
         <div className={styles.item}>
           <span>Tanggal</span>
           <strong>
-            {request.date
-              ? new Date(request.date).toLocaleString(
-                  "id-ID"
-                )
+            {requestDate
+              ? new Date(
+                  requestDate
+                ).toLocaleString("id-ID")
               : "-"}
           </strong>
         </div>
@@ -80,10 +86,57 @@ function RequestDetail({
           </strong>
         </div>
 
-        {request.reason && (
+        <div className={styles.products}>
+          <div className={styles.productsHeader}>
+            <span>Produk</span>
+            <span>Jumlah</span>
+          </div>
+
+          {items.length > 0 ? (
+            items.map((item, index) => {
+              const product =
+                item.product || {};
+
+              return (
+                <div
+                  className={styles.product}
+                  key={
+                    item.id ||
+                    `${item.productId}-${index}`
+                  }
+                >
+                  <div>
+                    <strong>
+                      {product.name ||
+                        item.productName ||
+                        "Produk"}
+                    </strong>
+
+                    <span>
+                      {product.code ||
+                        item.productCode ||
+                        "-"}
+                    </span>
+                  </div>
+
+                  <strong>
+                    {item.quantity ?? 0}{" "}
+                    {product.unit || "pcs"}
+                  </strong>
+                </div>
+              );
+            })
+          ) : (
+            <div className={styles.empty}>
+              Tidak ada produk
+            </div>
+          )}
+        </div>
+
+        {note && (
           <div className={styles.item}>
-            <span>Alasan</span>
-            <p>{request.reason}</p>
+            <span>Catatan</span>
+            <p>{note}</p>
           </div>
         )}
       </div>
@@ -93,7 +146,9 @@ function RequestDetail({
           <Button
             type="button"
             variant="danger"
-            onClick={() => onReject?.(request)}
+            onClick={() =>
+              onReject?.(request)
+            }
           >
             Tolak
           </Button>
@@ -101,7 +156,9 @@ function RequestDetail({
           <Button
             type="button"
             variant="success"
-            onClick={() => onApprove?.(request)}
+            onClick={() =>
+              onApprove?.(request)
+            }
           >
             Setujui
           </Button>

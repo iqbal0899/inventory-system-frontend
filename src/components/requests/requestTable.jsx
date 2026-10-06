@@ -1,7 +1,9 @@
 import { Eye } from "lucide-react";
+
 import Button from "../common/button";
 import Table from "../common/table";
 import Pagination from "../common/pagination";
+
 import styles from "../../css/requestTable.module.css";
 
 function RequestTable({
@@ -19,44 +21,104 @@ function RequestTable({
     completed: "Selesai",
   };
 
+  const getRequestItems = (request) => {
+    return (
+      request.items ||
+      request.requestItems ||
+      []
+    );
+  };
+
+  const getProducts = (request) => {
+    const items = getRequestItems(request);
+
+    if (items.length > 0) {
+      return items
+        .map(
+          (item) =>
+            item.product?.name ||
+            item.productName ||
+            "-"
+        )
+        .join(", ");
+    }
+
+    return (
+      request.product?.name ||
+      request.product ||
+      "-"
+    );
+  };
+
+  const getTotalQuantity = (request) => {
+    const items = getRequestItems(request);
+
+    if (items.length > 0) {
+      return items.reduce(
+        (total, item) =>
+          total + Number(item.quantity || 0),
+        0
+      );
+    }
+
+    return Number(request.quantity || 0);
+  };
+
+  const getRequester = (request) => {
+    return (
+      request.requester?.username ||
+      request.user?.username ||
+      request.requester ||
+      request.user ||
+      "-"
+    );
+  };
+
+  const getDate = (request) => {
+    const date =
+      request.date ||
+      request.createdAt ||
+      request.requestedAt;
+
+    return date
+      ? new Date(date).toLocaleDateString("id-ID")
+      : "-";
+  };
+
   const columns = [
     {
       key: "id",
       label: "ID Request",
       render: (request) => (
-        <strong>{request.id || "-"}</strong>
+        <strong>
+          {request.id || "-"}
+        </strong>
       ),
     },
     {
       key: "product",
       label: "Produk",
       render: (request) =>
-        request.product?.name ||
-        request.product ||
-        "-",
+        getProducts(request),
     },
     {
       key: "quantity",
       label: "Jumlah",
       align: "center",
       render: (request) =>
-        `${request.quantity ?? 0} unit`,
+        `${getTotalQuantity(request)} unit`,
     },
     {
       key: "requester",
       label: "Requester",
       render: (request) =>
-        request.requester?.username ||
-        request.requester ||
-        "-",
+        getRequester(request),
     },
     {
       key: "date",
       label: "Tanggal",
       render: (request) =>
-        request.date
-          ? new Date(request.date).toLocaleDateString("id-ID")
-          : "-",
+        getDate(request),
     },
     {
       key: "status",
@@ -84,7 +146,9 @@ function RequestTable({
           variant="outline"
           size="small"
           icon={Eye}
-          onClick={() => onView?.(request)}
+          onClick={() =>
+            onView?.(request)
+          }
         >
           Detail
         </Button>
