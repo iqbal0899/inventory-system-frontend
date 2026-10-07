@@ -2,32 +2,114 @@
   width: 100%;
 }
 
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
 .status {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   padding: 5px 10px;
   border-radius: 999px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .pending {
-  color: #b45309;
-  background: #fef3c7;
+  background: #fff7ed;
+  color: #c2410c;
 }
 
 .approved {
-  color: #15803d;
-  background: #dcfce7;
+  background: #ecfdf5;
+  color: #047857;
 }
 
 .rejected {
-  color: #dc2626;
-  background: #fee2e2;
+  background: #fef2f2;
+  color: #b91c1c;
 }
 
 .completed {
-  color: #1769d1;
-  background: #dbeafe;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.confirmation {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 14px;
+  padding: 8px 4px 4px;
+}
+
+.confirmationIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+}
+
+.approveIcon {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.rejectIcon {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.confirmation h3 {
+  margin: 0;
+  color: #111827;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.confirmation p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.confirmation p strong {
+  color: #111827;
+}
+
+.confirmationActions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  margin-top: 8px;
+}
+
+@media (max-width: 768px) {
+  .actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .actions button {
+    width: 100%;
+  }
+
+  .confirmationActions {
+    flex-direction: column-reverse;
+  }
+
+  .confirmationActions button {
+    width: 100%;
+  }
 }

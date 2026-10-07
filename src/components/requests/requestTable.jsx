@@ -1,4 +1,4 @@
-import { Eye } from "lucide-react";
+import { Check, Eye, X } from "lucide-react";
 
 import Button from "../common/button";
 import Table from "../common/table";
@@ -13,12 +13,20 @@ function RequestTable({
   totalPages = 1,
   onPageChange,
   onView,
+  onApprove,
+  onReject,
 }) {
   const statusLabel = {
-    pending: "Menunggu",
-    approved: "Disetujui",
-    rejected: "Ditolak",
-    completed: "Selesai",
+    PENDING: "Pending",
+    APPROVED: "Approved",
+    REJECTED: "Rejected",
+    COMPLETED: "Completed",
+    CANCELLED: "Cancelled",
+    pending: "Pending",
+    approved: "Approved",
+    rejected: "Rejected",
+    completed: "Completed",
+    cancelled: "Cancelled",
   };
 
   const getRequestItems = (request) => {
@@ -66,6 +74,7 @@ function RequestTable({
 
   const getRequester = (request) => {
     return (
+      request.createdBy?.username ||
       request.requester?.username ||
       request.user?.username ||
       request.requester ||
@@ -76,8 +85,8 @@ function RequestTable({
 
   const getDate = (request) => {
     const date =
-      request.date ||
       request.createdAt ||
+      request.date ||
       request.requestedAt;
 
     return date
@@ -85,13 +94,22 @@ function RequestTable({
       : "-";
   };
 
+  const isPending = (request) => {
+    return (
+      request.status === "PENDING" ||
+      request.status === "pending"
+    );
+  };
+
   const columns = [
     {
-      key: "id",
+      key: "requestNumber",
       label: "ID Request",
       render: (request) => (
         <strong>
-          {request.id || "-"}
+          {request.requestNumber ||
+            request.id ||
+            "-"}
         </strong>
       ),
     },
@@ -127,7 +145,11 @@ function RequestTable({
       render: (request) => (
         <span
           className={`${styles.status} ${
-            styles[request.status] || ""
+            styles[
+              String(
+                request.status || ""
+              ).toLowerCase()
+            ] || ""
           }`}
         >
           {statusLabel[request.status] ||
@@ -141,17 +163,47 @@ function RequestTable({
       label: "Aksi",
       align: "center",
       render: (request) => (
-        <Button
-          type="button"
-          variant="outline"
-          size="small"
-          icon={Eye}
-          onClick={() =>
-            onView?.(request)
-          }
-        >
-          Detail
-        </Button>
+        <div className={styles.actions}>
+          <Button
+            type="button"
+            variant="outline"
+            size="small"
+            icon={Eye}
+            onClick={() =>
+              onView?.(request)
+            }
+          >
+            Detail
+          </Button>
+
+          {isPending(request) && (
+            <>
+              <Button
+                type="button"
+                variant="success"
+                size="small"
+                icon={Check}
+                onClick={() =>
+                  onApprove?.(request)
+                }
+              >
+                Approve
+              </Button>
+
+              <Button
+                type="button"
+                variant="danger"
+                size="small"
+                icon={X}
+                onClick={() =>
+                  onReject?.(request)
+                }
+              >
+                Reject
+              </Button>
+            </>
+          )}
+        </div>
       ),
     },
   ];

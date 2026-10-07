@@ -1,62 +1,193 @@
-import { useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 
-import Button from "../../components/common/button";
-import Loading from "../../components/common/loading";
-import StockMovementTable from "../../components/stock/stockMovementTable";
+import Table from "../common/table";
+import Pagination from "../common/pagination";
 
-import styles from "../../css/stockHistory.module.css";
+import { getStockMovements } from "../../services/stockApi";
+
+import styles from "../../css/stockMovmentTable.module.css";
 
 function StockHistory() {
-  const [movements] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [movements, setMovements] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const [currentPage, setCurrentPage] = useState(1);
-  const totalPages = 1;
+  const [totalPages, setTotalPages] = useState(1);
 
-  const handleRefresh = () => {
-    setLoading(true);
+  const loadMovements = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError("");
 
-    setTimeout(() => {
+      const response =
+        await getStockMovements({
+          page: currentPage,
+          limit: 10,
+        });
+
+      setMovements(
+        response?.data || []
+      );
+
+      setTotalPages(
+        response?.pagination?.totalPages || 1
+      );
+    } catch (error) {
+      console.error(
+        "Gagal mengambil riwayat stok:",
+        error
+      );
+
+      setMovements([]);
+      setTotalPages(1);
+
+      setError(
+        error?.response?.data?.message ||
+          "Gagal mengambil riwayat stok."
+      );
+    } finally {
       setLoading(false);
-    }, 500);
+    }
+  }, [currentPage]);
+
+  useEffect(() => {
+    loadMovements();
+  }, [loadMovements]);
+
+  const movementLabels = {
+    INITIAL: "Stok Awal",
+    IN: "Stok Masuk",
+    OUT: "Stok Keluar",
+    ADJUSTMENT: "Penyesuaian",
   };
 
-  return (
-    <main className={styles.page}>
-      <div className={styles.header}>
-        <div>
-          <h1>Riwayat Stok</h1>
-          <p>
-            Riwayat seluruh pergerakan stok produk.
-          </p>
-        </div>
-
-        <Button
-          type="button"
-          variant="outline"
-          icon={RefreshCw}
-          onClick={handleRefresh}
+  const columns = [
+    {
+      key: "createdAt",
+      label: "Tanggal",
+      render: (movement) =>
+        movement.createdAt
+          ? new Date(
+              movement.createdAt
+            ).toLocaleString("id-ID")
+          : "-",
+    },
+    {
+      key: "product",
+      label: "Produk",
+      render: (movement) =>
+        movement.product?.name || "-",
+    },
+    {
+      key: "type",
+      label: "Jenis",
+      align: "center",
+      render: (movement) => (
+        <span
+          className={`${styles.type} ${
+            styles[
+              movement.type?.toLowerCase()
+            ] || ""
+          }`}
         >
-          Refresh
-        </Button>
-      </div>
+          {movementLabels[
+            movement.type
+          ] ||
+            movement.type ||
+            "-"}
+        </span>
+      ),
+    },
+    {
+      key: "stockBefore",
+      label: "Sebelum",
+      align: "center",
+      render: (movement) =>
+        movement.stockBefore ?? "-",
+    },
+    {
+      key: "quantity",
+      label: "Perubahan",
+      align: "center",
+      render: (movement) => {
+        const quantity = Number(
+          movement.quantity ?? 0
+        );
 
-      {loading ? (
-        <Loading
-          size="medium"
-          text="Memuat riwayat stok..."
-        />
-      ) : (
-        <StockMovementTable
-          movements={movements}
-          loading={loading}
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
-        />
+        const isDecrease =
+          movement.type === "OUT" ||
+          (movement.type === "ADJUSTMENT" &&
+            quantity < 0);
+
+        if (quantity === 0) {
+          return "0";
+        }
+
+        return (
+          <span
+            className={
+              isDecrease
+                ? styles.decrease
+                : styles.increase
+            }
+          >
+            {isDecrease ? "-" : "+"}
+            {Math.abs(quantity)}
+          </span>
+        );
+      },
+    },
+    {
+      key: "stockAfter",
+      label: "Sesudah",
+      align: "center",
+      render: (movement) =>
+        movement.stockAfter ?? "-",
+    },
+    {
+      key: "user",
+      label: "Oleh",
+      render: (movement) =>
+        movement.user?.username || "-",
+    },
+    {
+      key: "request",
+      label: "Kode Request",
+      render: (movement) =>
+        movement.request?.requestNumber ||
+        "-",
+    },
+    {
+      key: "note",
+      label: "Keterangan",
+      render: (movement) =>
+        movement.note || "-",
+    },
+  ];
+
+  return (
+    <div className={styles.container}>
+      {error && (
+        <div className={styles.error}>
+          {error}
+        </div>
       )}
-    </main>
+
+      <Table
+        columns={columns}
+        data={movements}
+        loading={loading}
+        emptyMessage="Belum ada riwayat pergerakan stok."
+        rowKey="id"
+      />
+
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+      />
+    </div>
   );
 }
 

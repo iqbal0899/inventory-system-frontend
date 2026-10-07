@@ -3,7 +3,6 @@ import { Send } from "lucide-react";
 
 import Button from "../common/button";
 import RequestProductSelector from "./requestProductSelector";
-import RequestItemTable from "./requestTable";
 import RequestSummary from "./requestSummary";
 
 import styles from "../../css/requestForm.module.css";
@@ -56,13 +55,6 @@ function RequestForm({
     ]);
   };
 
-  const handleRemoveItem = (productId) => {
-    setItems(
-      items.filter(
-        (item) => item.productId !== Number(productId)
-      )
-    );
-  };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -105,13 +97,6 @@ function RequestForm({
           {error}
         </div>
       )}
-
-      <RequestItemTable
-        products={products}
-        items={items}
-        loading={loading}
-        onRemove={handleRemoveItem}
-      />
 
       <div className={styles.note}>
         <label htmlFor="request-note">

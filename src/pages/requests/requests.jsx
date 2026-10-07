@@ -119,20 +119,29 @@ function Request() {
     setSelectedRequest(request);
   };
 
-  const handleAction = (type) => {
+  const handleAction = (type, request) => {
     setAction(type);
+    setSelectedRequest(request);
   };
 
-  const handleConfirm = async (request) => {
+  const handleConfirm = async () => {
+    if (!selectedRequest) {
+      return;
+    }
+
     try {
       setLoading(true);
 
       if (action === "approve") {
-        await approveRequest(request.id);
+        await approveRequest(
+          selectedRequest.id
+        );
       }
 
       if (action === "reject") {
-        await rejectRequest(request.id);
+        await rejectRequest(
+          selectedRequest.id
+        );
       }
 
       setAction(null);
@@ -144,6 +153,11 @@ function Request() {
       console.error(
         "Gagal memproses request:",
         error
+      );
+
+      console.error(
+        "Response:",
+        error.response?.data
       );
     } finally {
       setLoading(false);
@@ -239,28 +253,50 @@ function Request() {
               totalPages={totalPages}
               onPageChange={handlePageChange}
               onView={handleView}
+              onApprove={(request) =>
+                handleAction(
+                  "approve",
+                  request
+                )
+              }
+              onReject={(request) =>
+                handleAction(
+                  "reject",
+                  request
+                )
+              }
             />
           )}
 
           <RequestDetail
             isOpen={
-              Boolean(selectedRequest) && !action
+              Boolean(selectedRequest) &&
+              !action
             }
             onClose={() =>
               setSelectedRequest(null)
             }
             request={selectedRequest}
             onApprove={() =>
-              handleAction("approve")
+              handleAction(
+                "approve",
+                selectedRequest
+              )
             }
             onReject={() =>
-              handleAction("reject")
+              handleAction(
+                "reject",
+                selectedRequest
+              )
             }
           />
 
           <RequestAction
             isOpen={Boolean(action)}
-            onClose={() => setAction(null)}
+            onClose={() => {
+              setAction(null);
+              setSelectedRequest(null);
+            }}
             request={selectedRequest}
             action={action}
             loading={loading}
@@ -270,9 +306,13 @@ function Request() {
           {showForm && (
             <RequestForm
               products={products}
-              loading={productLoading || loading}
+              loading={
+                productLoading || loading
+              }
               onSubmit={handleCreateRequest}
-              onCancel={() => setShowForm(false)}
+              onCancel={() =>
+                setShowForm(false)
+              }
             />
           )}
         </main>

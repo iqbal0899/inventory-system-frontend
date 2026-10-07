@@ -1,57 +1,49 @@
-import axiosApi from "./axiosApi";
+import api from "./axiosApi";
 
-export async function getStocks() {
-  const response = await axiosApi.get("/stocks");
+export async function getStocks(params = {}) {
+  const response = await api.get("/stock", {
+    params,
+  });
+
   return response.data;
 }
 
 export async function getStockByProductId(productId) {
-  const response = await axiosApi.get(
-    `/stocks/${productId}`
-  );
+  const response = await api.get(`/stock/${productId}`);
 
   return response.data;
 }
 
-export async function getStockMovements(productId) {
-  const response = await axiosApi.get(
-    `/stocks/${productId}/movements`
-  );
+export async function getStockMovements(params = {}) {
+  const response = await api.get("/stock/movements", {
+    params,
+  });
 
   return response.data;
 }
 
 export async function stockIn(productId, data) {
-  const response = await axiosApi.post(
-    `/stocks/${productId}/in`,
-    {
-      quantity: Number(data.quantity),
-      note: data.note || null,
-    }
+  const response = await api.post(
+    `/stock/${productId}/in`,
+    data
   );
 
   return response.data;
 }
 
 export async function stockOut(productId, data) {
-  const response = await axiosApi.post(
-    `/stocks/${productId}/out`,
-    {
-      quantity: Number(data.quantity),
-      note: data.note || null,
-    }
+  const response = await api.post(
+    `/stock/${productId}/out`,
+    data
   );
 
   return response.data;
 }
 
 export async function adjustStock(productId, data) {
-  const response = await axiosApi.patch(
-    `/stocks/${productId}/adjust`,
-    {
-      stock: Number(data.stock),
-      note: data.note || null,
-    }
+  const response = await api.patch(
+    `/stock/${productId}/adjust`,
+    data
   );
 
   return response.data;

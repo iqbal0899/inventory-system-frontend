@@ -49,7 +49,12 @@ function Stock() {
 
       setProducts(response?.data || []);
     } catch (error) {
-      console.error("Gagal mengambil data stok:", error);
+      console.error(
+        "Gagal mengambil data stok:",
+        error
+      );
+
+      setProducts([]);
 
       setError(
         error?.response?.data?.message ||
