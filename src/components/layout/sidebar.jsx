@@ -9,6 +9,7 @@ import {
   History,
   PanelLeftClose,
   PanelLeftOpen,
+  Users
 } from "lucide-react";
 
 import { useNavigate, useLocation } from "react-router-dom";
@@ -23,6 +24,7 @@ const menuItems = [
   { label: "Pembelian", icon: ShoppingCart, path: "/purchases" },
   { label: "Laporan", icon: FileText, path: "/reports" },
   { label: "Audit Log", icon: History, path: "/audit-logs" },
+  { label: "Data User", icon: Users, path: "/users" },
 ];
 
 function Sidebar({ collapsed, setCollapsed }) {

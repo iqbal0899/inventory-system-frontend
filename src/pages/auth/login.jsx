@@ -11,11 +11,12 @@ import {
 } from "lucide-react";
 
 import Button from "../../components/common/button";
-import axiosApi from "../../services/axiosApi";
+import { useAuth } from "../../context/authContext";
 import styles from "../../css/login.module.css";
 
 export default function Login() {
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const [formData, setFormData] = useState({
     username: "",
@@ -39,66 +40,50 @@ export default function Login() {
     }
   };
 
- const handleSubmit = async (event) => {
-  event.preventDefault();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
 
-  if (!formData.username.trim()) {
-    setError("Username wajib diisi.");
-    return;
-  }
-
-  if (!formData.password) {
-    setError("Password wajib diisi.");
-    return;
-  }
-
-  try {
-    setLoading(true);
-    setError("");
-
-    const response = await axiosApi.post("/auth/login", {
-      username: formData.username.trim(),
-      password: formData.password,
-    });
-
-    console.log("LOGIN RESPONSE:", response.data);
-
-    if (!response.data.success) {
-      setError(
-        response.data.message || "Login gagal."
-      );
+    if (!formData.username.trim()) {
+      setError("Username wajib diisi.");
       return;
     }
 
-    console.log("LOGIN BERHASIL");
+    if (!formData.password) {
+      setError("Password wajib diisi.");
+      return;
+    }
 
-    navigate("/dashboard", {
-      replace: true,
-    });
-  } catch (error) {
-    console.error("LOGIN ERROR:", error);
-    console.error("ERROR RESPONSE:", error.response);
-    console.error("ERROR DATA:", error.response?.data);
+    try {
+      setLoading(true);
+      setError("");
 
-    setError(
-      error.response?.data?.message ||
-        "Terjadi kesalahan. Silakan coba lagi."
-    );
-  } finally {
-    setLoading(false);
-  }
-};
+      await login(
+        formData.username.trim(),
+        formData.password
+      );
+
+      navigate("/dashboard", {
+        replace: true,
+      });
+    } catch (error) {
+      console.error("LOGIN ERROR:", error);
+
+      setError(
+        error?.response?.data?.message ||
+          "Username atau password salah."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <main className={styles.loginPage}>
       <div className={styles.loginWrapper}>
-
-        {/* ================= LEFT SIDE ================= */}
         <section className={styles.loginLeft}>
           <div className={styles.circleOne} />
           <div className={styles.circleTwo} />
 
-          {/* Brand */}
           <div className={styles.brand}>
             <div className={styles.brandIcon}>
               <Box size={26} strokeWidth={2} />
@@ -113,7 +98,6 @@ export default function Login() {
             </div>
           </div>
 
-          {/* Hero */}
           <div className={styles.hero}>
             <span className={styles.badge}>
               INVENTORY MANAGEMENT
@@ -132,7 +116,6 @@ export default function Login() {
             </p>
           </div>
 
-          {/* Features */}
           <div className={styles.features}>
             <div className={styles.feature}>
               <div className={styles.featureIcon}>
@@ -171,7 +154,6 @@ export default function Login() {
             </div>
           </div>
 
-          {/* Warehouse Illustration */}
           <div className={styles.warehouse}>
             <div className={styles.shelf}>
               <div className={styles.shelfLevel}>
@@ -197,11 +179,8 @@ export default function Login() {
           </div>
         </section>
 
-        {/* ================= RIGHT SIDE ================= */}
         <section className={styles.loginRight}>
           <div className={styles.loginCard}>
-
-            {/* Mobile Brand */}
             <div className={styles.mobileBrand}>
               <div className={styles.mobileBrandIcon}>
                 <Box size={24} strokeWidth={2} />
@@ -212,7 +191,6 @@ export default function Login() {
               </h2>
             </div>
 
-            {/* Form Header */}
             <div className={styles.formHeader}>
               <div className={styles.formLogo}>
                 <Box size={28} strokeWidth={2} />
@@ -225,10 +203,7 @@ export default function Login() {
               </p>
             </div>
 
-            {/* Login Form */}
             <form onSubmit={handleSubmit}>
-
-              {/* Username */}
               <div className={styles.formGroup}>
                 <label htmlFor="username">
                   Username
@@ -253,7 +228,6 @@ export default function Login() {
                 </div>
               </div>
 
-              {/* Password */}
               <div className={styles.formGroup}>
                 <label htmlFor="password">
                   Password
@@ -299,14 +273,12 @@ export default function Login() {
                 </div>
               </div>
 
-              {/* Error */}
               {error && (
                 <div className={styles.error}>
                   {error}
                 </div>
               )}
 
-              {/* Options */}
               <div className={styles.options}>
                 <label>
                   <input type="checkbox" />
@@ -314,7 +286,6 @@ export default function Login() {
                 </label>
               </div>
 
-              {/* Login Button */}
               <Button
                 type="submit"
                 variant="primary"
@@ -328,7 +299,6 @@ export default function Login() {
               </Button>
             </form>
 
-            {/* Security */}
             <div className={styles.security}>
               <div className={styles.securityIcon}>
                 <ShieldCheck
@@ -347,7 +317,6 @@ export default function Login() {
               </div>
             </div>
 
-            {/* Copyright */}
             <p className={styles.copyright}>
               © 2026 Inventory System. All rights reserved.
             </p>

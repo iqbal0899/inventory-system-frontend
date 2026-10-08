@@ -5,7 +5,7 @@ import {
   Navigate,
 } from "react-router-dom";
 
-import { useAuth } from "./hooks/useAuth";
+import { useAuth } from "./context/authContext";
 
 import Login from "./pages/auth/login";
 import Dashboard from "./pages/dashboard/dashboard";
@@ -15,24 +15,17 @@ import Request from "./pages/requests/requests";
 import Supplier from "./pages/suppliers/suppliers";
 import SupplierDetail from "./pages/suppliers/supplierDetail";
 import Report from "./pages/reports/reports";
+import Users from "./pages/users/users";
 
 function ProtectedRoute({ children }) {
-  const {
-    user,
-    loading,
-  } = useAuth();
+  const { user, loading } = useAuth();
 
   if (loading) {
     return <div>Loading...</div>;
   }
 
   if (!user) {
-    return (
-      <Navigate
-        to="/login"
-        replace
-      />
-    );
+    return <Navigate to="/login" replace />;
   }
 
   return children;
@@ -42,24 +35,16 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* ROOT */}
         <Route
           path="/"
-          element={
-            <Navigate
-              to="/login"
-              replace
-            />
-          }
+          element={<Navigate to="/login" replace />}
         />
 
-        {/* LOGIN */}
         <Route
           path="/login"
           element={<Login />}
         />
 
-        {/* DASHBOARD */}
         <Route
           path="/dashboard"
           element={
@@ -69,7 +54,6 @@ function App() {
           }
         />
 
-        {/* PRODUCTS */}
         <Route
           path="/products"
           element={
@@ -79,7 +63,6 @@ function App() {
           }
         />
 
-        {/* STOCK */}
         <Route
           path="/stock"
           element={
@@ -89,7 +72,6 @@ function App() {
           }
         />
 
-        {/* REQUESTS */}
         <Route
           path="/requests"
           element={
@@ -99,7 +81,6 @@ function App() {
           }
         />
 
-        {/* SUPPLIERS */}
         <Route
           path="/suppliers"
           element={
@@ -109,7 +90,6 @@ function App() {
           }
         />
 
-        {/* SUPPLIER DETAIL */}
         <Route
           path="/suppliers/:id"
           element={
@@ -119,7 +99,6 @@ function App() {
           }
         />
 
-        {/* REPORTS */}
         <Route
           path="/reports"
           element={
@@ -129,7 +108,6 @@ function App() {
           }
         />
 
-        {/* NOT FOUND */}
         <Route
           path="*"
           element={
@@ -139,6 +117,14 @@ function App() {
             />
           }
         />
+        <Route
+  path="/users"
+  element={
+    <ProtectedRoute>
+      <Users />
+    </ProtectedRoute>
+  }
+/>
       </Routes>
     </BrowserRouter>
   );

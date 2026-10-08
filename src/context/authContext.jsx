@@ -1,4 +1,9 @@
-import { createContext, useEffect, useState } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 
 import {
   getMe,
@@ -33,9 +38,11 @@ export function AuthProvider({ children }) {
   }
 
   async function logout() {
-    await logoutApi();
-
-    setUser(null);
+    try {
+      await logoutApi();
+    } finally {
+      setUser(null);
+    }
   }
 
   useEffect(() => {
@@ -55,4 +62,8 @@ export function AuthProvider({ children }) {
       {children}
     </AuthContext.Provider>
   );
+}
+
+export function useAuth() {
+  return useContext(AuthContext);
 }
