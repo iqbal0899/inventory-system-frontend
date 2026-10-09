@@ -1,8 +1,9 @@
+
 import axiosApi from "./axiosApi";
 
 export async function login(username, password) {
   const response = await axiosApi.post("/auth/login", {
-    username,
+    username: username.trim(),
     password,
   });
 
@@ -20,4 +21,3 @@ export async function logout() {
 
   return response.data;
 }
-

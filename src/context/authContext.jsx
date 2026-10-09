@@ -1,5 +1,7 @@
+
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useState,
@@ -16,23 +18,46 @@ export const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [authError, setAuthError] = useState(null);
 
-  async function checkAuth() {
+  const checkAuth = useCallback(async () => {
     try {
       const result = await getMe();
+      const userData = result?.user ?? result?.data?.user;
 
-      setUser(result.data.user);
-    } catch {
-      setUser(null);
+      if (!result?.success || !userData) {
+        setUser(null);
+        setAuthError("Sesi login tidak valid.");
+        return;
+      }
+
+      setUser(userData);
+      setAuthError(null);
+    } catch (error) {
+      if (error.response?.status === 401) {
+        setUser(null);
+        setAuthError(null);
+      } else {
+        setAuthError(
+          "Gagal memeriksa sesi. Periksa koneksi ke server."
+        );
+      }
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
   async function login(username, password) {
     const result = await loginApi(username, password);
+    const userData = result?.user ?? result?.data?.user;
 
-    setUser(result.data.user);
+    if (!userData) {
+      console.error("LOGIN RESPONSE:", result);
+      throw new Error("Data user tidak ditemukan pada respons login.");
+    }
+
+    setUser(userData);
+    setAuthError(null);
 
     return result;
   }
@@ -40,23 +65,32 @@ export function AuthProvider({ children }) {
   async function logout() {
     try {
       await logoutApi();
+    } catch (error) {
+      console.error(
+        "LOGOUT ERROR:",
+        error.response?.data?.message || error.message
+      );
+      throw error;
     } finally {
       setUser(null);
+      setAuthError(null);
     }
   }
 
   useEffect(() => {
     checkAuth();
-  }, []);
+  }, [checkAuth]);
 
   return (
     <AuthContext.Provider
       value={{
         user,
         loading,
+        authError,
         login,
         logout,
-        isAuthenticated: !!user,
+        checkAuth,
+        isAuthenticated: Boolean(user),
       }}
     >
       {children}
@@ -65,5 +99,11 @@ export function AuthProvider({ children }) {
 }
 
 export function useAuth() {
-  return useContext(AuthContext);
+  const context = useContext(AuthContext);
+
+  if (!context) {
+    throw new Error("useAuth harus digunakan di dalam AuthProvider.");
+  }
+
+  return context;
 }
