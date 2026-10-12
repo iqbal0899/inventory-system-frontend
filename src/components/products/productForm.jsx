@@ -102,55 +102,49 @@ function ProductForm({
   // INITIAL DATA
   // =========================
 
-  useEffect(() => {
-    if (initialData) {
-      setFormData({
-        code:
-          initialData.code || "",
+  
 
-        name:
-          initialData.name || "",
+useEffect(() => {
+  if (!initialData) {
+    setFormData({ ...initialForm });
+    setImagePreview("");
+    return;
+  }
 
-        description:
-          initialData.description || "",
+  console.log("INITIAL DATA:", initialData);
+  console.log("CATEGORY DARI BACKEND:", initialData.category);
 
-        category:
-          initialData.category || "",
+  const savedCategory = String(
+    initialData.category ?? ""
+  ).trim();
 
-        supplierId:
-          initialData.supplierId ??
-          initialData.supplier?.id ??
-          "",
+  const matchedCategory = productCategories.find(
+    (category) =>
+      category.toLowerCase() === savedCategory.toLowerCase()
+  );
 
-        price:
-          initialData.price ?? "",
+  setFormData({
+    code: initialData.code || "",
+    name: initialData.name || "",
+    description: initialData.description || "",
+    category: matchedCategory || savedCategory,
+    supplierId: String(
+      initialData.supplierId ??
+      initialData.supplier?.id ??
+      ""
+    ),
+    price: initialData.price ?? "",
+    stock: initialData.stock ?? "",
+    minStock: initialData.minStock ?? "",
+    unit: initialData.unit || "pcs",
+    image: null,
+    status: initialData.status || "ACTIVE",
+  });
 
-        stock:
-          initialData.stock ?? "",
+  setImagePreview(initialData.image || "");
+}, [initialData]);
 
-        minStock:
-          initialData.minStock ?? "",
 
-        unit:
-          initialData.unit || "pcs",
-
-        image: null,
-
-        status:
-          initialData.status || "ACTIVE",
-      });
-
-      setImagePreview(
-        initialData.image || ""
-      );
-    } else {
-      setFormData({
-        ...initialForm,
-      });
-
-      setImagePreview("");
-    }
-  }, [initialData]);
 
   // =========================
   // HANDLE CHANGE
