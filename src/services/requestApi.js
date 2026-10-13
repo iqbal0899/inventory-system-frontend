@@ -19,14 +19,25 @@ export async function createRequest(data) {
 
   return response.data;
 }
-
 export async function approveRequest(id) {
-  const response = await api.patch(
-    `/requests/${id}/approve`
-  );
+  try {
+    const response = await api.patch(
+      `/requests/${id}/approve`
+    );
 
-  return response.data;
+    return response.data;
+  } catch (error) {
+    console.error("APPROVE REQUEST ERROR:", {
+      id,
+      status: error.response?.status,
+      response: error.response?.data,
+      message: error.message,
+    });
+
+    throw error;
+  }
 }
+
 
 export async function rejectRequest(id, data = {}) {
   const response = await api.patch(

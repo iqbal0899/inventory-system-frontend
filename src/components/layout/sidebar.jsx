@@ -9,7 +9,7 @@ import {
   History,
   PanelLeftClose,
   PanelLeftOpen,
-  Users
+  Users,
 } from "lucide-react";
 
 import { useNavigate, useLocation } from "react-router-dom";
@@ -21,9 +21,19 @@ const menuItems = [
   { label: "Stok", icon: Boxes, path: "/stock" },
   { label: "Permintaan Kasir", icon: ClipboardList, path: "/requests" },
   { label: "Supplier", icon: Truck, path: "/suppliers" },
-  { label: "Pembelian", icon: ShoppingCart, path: "/purchases" },
+  {
+    label: "Pembelian",
+    icon: ShoppingCart,
+    path: "/purchases",
+    disabled: true,
+  },
   { label: "Laporan", icon: FileText, path: "/reports" },
-  { label: "Audit Log", icon: History, path: "/audit-logs" },
+  {
+    label: "Audit Log",
+    icon: History,
+    path: "/audit-logs",
+    disabled: true,
+  },
   { label: "Data User", icon: Users, path: "/users" },
 ];
 
@@ -52,14 +62,10 @@ function Sidebar({ collapsed, setCollapsed }) {
           className={styles.collapseButton}
           onClick={() => setCollapsed((previous) => !previous)}
           title={
-            collapsed
-              ? "Tampilkan sidebar"
-              : "Sembunyikan sidebar"
+            collapsed ? "Tampilkan sidebar" : "Sembunyikan sidebar"
           }
           aria-label={
-            collapsed
-              ? "Tampilkan sidebar"
-              : "Sembunyikan sidebar"
+            collapsed ? "Tampilkan sidebar" : "Sembunyikan sidebar"
           }
         >
           {collapsed ? (
@@ -78,25 +84,44 @@ function Sidebar({ collapsed, setCollapsed }) {
         <nav className={styles.sidebarMenu}>
           {menuItems.map((item) => {
             const Icon = item.icon;
-            const isActive =
-              location.pathname === item.path;
+            const isActive = location.pathname === item.path;
 
             return (
               <button
                 key={item.label}
                 type="button"
-                onClick={() => navigate(item.path)}
+                onClick={() => {
+                  if (!item.disabled) {
+                    navigate(item.path);
+                  }
+                }}
+                disabled={item.disabled}
                 className={`${styles.menuItem} ${
                   isActive ? styles.active : ""
-                }`}
-                title={collapsed ? item.label : ""}
+                } ${item.disabled ? styles.disabled : ""}`}
+                title={
+                  collapsed
+                    ? item.disabled
+                      ? `${item.label} - Coming Soon`
+                      : item.label
+                    : ""
+                }
+                aria-disabled={item.disabled || undefined}
               >
                 <Icon size={19} strokeWidth={1.8} />
 
                 {!collapsed && (
-                  <span className={styles.menuLabel}>
-                    {item.label}
-                  </span>
+                  <>
+                    <span className={styles.menuLabel}>
+                      {item.label}
+                    </span>
+
+                    {item.disabled && (
+                      <span className={styles.comingSoon}>
+                        Segera hadir
+                      </span>
+                    )}
+                  </>
                 )}
               </button>
             );

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { RefreshCw, Plus } from "lucide-react";
 
 import Button from "../../components/common/button";
@@ -31,15 +31,13 @@ function Request() {
   const [loading, setLoading] = useState(false);
   const [productLoading, setProductLoading] = useState(false);
 
-  const [selectedRequest, setSelectedRequest] =
-    useState(null);
-
+  const [selectedRequest, setSelectedRequest] = useState(null);
   const [action, setAction] = useState(null);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  const loadProducts = async () => {
+  const loadProducts = useCallback(async () => {
     try {
       setProductLoading(true);
 
@@ -49,27 +47,23 @@ function Request() {
       });
 
       const data =
-        response?.data?.products ||
-        response?.data ||
-        response?.products ||
+        response?.data?.products ??
+        response?.data?.data?.products ??
+        response?.data?.data ??
+        response?.data ??
+        response?.products ??
         [];
 
-      setProducts(
-        Array.isArray(data) ? data : []
-      );
+      setProducts(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.error(
-        "Gagal mengambil data produk:",
-        error
-      );
-
+      console.error("Gagal mengambil data produk:", error);
       setProducts([]);
     } finally {
       setProductLoading(false);
     }
-  };
+  }, []);
 
-  const loadRequests = async (page = currentPage) => {
+  const loadRequests = useCallback(async (page = 1) => {
     try {
       setLoading(true);
 
@@ -78,7 +72,7 @@ function Request() {
         limit: 10,
       });
 
-      const data = response?.data;
+      const data = response?.data?.data ?? response?.data;
 
       if (Array.isArray(data)) {
         setRequests(data);
@@ -86,34 +80,34 @@ function Request() {
         return;
       }
 
-      setRequests(data?.requests || []);
+      setRequests(
+        Array.isArray(data?.requests) ? data.requests : []
+      );
 
       setTotalPages(
-        data?.pagination?.totalPages || 1
+        Math.max(Number(data?.pagination?.totalPages) || 1, 1)
       );
     } catch (error) {
-      console.error(
-        "Gagal mengambil data request:",
-        error
-      );
+      console.error("Gagal mengambil data request:", error);
+      console.error("Response:", error.response?.data);
 
       setRequests([]);
       setTotalPages(1);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     await Promise.all([
       loadProducts(),
       loadRequests(currentPage),
     ]);
-  };
+  }, [loadProducts, loadRequests, currentPage]);
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [loadData]);
 
   const handleView = (request) => {
     setSelectedRequest(request);
@@ -124,8 +118,9 @@ function Request() {
     setSelectedRequest(request);
   };
 
-  const handleConfirm = async () => {
-    if (!selectedRequest) {
+  const handleConfirm = async (reason) => {
+    if (!selectedRequest?.id || !action) {
+      alert("Data request atau aksi tidak valid");
       return;
     }
 
@@ -133,32 +128,36 @@ function Request() {
       setLoading(true);
 
       if (action === "approve") {
-        await approveRequest(
-          selectedRequest.id
-        );
-      }
+        await approveRequest(selectedRequest.id);
+      } else if (action === "reject") {
+        if (typeof reason !== "string" || !reason.trim()) {
+          alert("Alasan penolakan wajib diisi");
+          return;
+        }
 
-      if (action === "reject") {
-        await rejectRequest(
-          selectedRequest.id
-        );
+        await rejectRequest(selectedRequest.id, {
+          reason: reason.trim(),
+        });
+      } else {
+        alert("Aksi request tidak dikenal");
+        return;
       }
 
       setAction(null);
       setSelectedRequest(null);
 
       await loadRequests(currentPage);
-      await loadProducts();
     } catch (error) {
-      console.error(
-        "Gagal memproses request:",
-        error
-      );
+      console.error("Gagal memproses request:", error);
+      console.error("Response:", error.response?.data);
 
-      console.error(
-        "Response:",
-        error.response?.data
-      );
+      const message =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message ||
+        "Gagal memproses request";
+
+      alert(message);
     } finally {
       setLoading(false);
     }
@@ -175,14 +174,10 @@ function Request() {
       await createRequest(data);
 
       setShowForm(false);
-
       await loadRequests(currentPage);
     } catch (error) {
-      console.error(
-        "Gagal membuat request:",
-        error
-      );
-
+      console.error("Gagal membuat request:", error);
+      console.error("Response:", error.response?.data);
       throw error;
     } finally {
       setLoading(false);
@@ -190,8 +185,10 @@ function Request() {
   };
 
   const handlePageChange = async (page) => {
-    setCurrentPage(page);
-    await loadRequests(page);
+    const nextPage = Math.max(1, Math.min(page, totalPages));
+
+    setCurrentPage(nextPage);
+    await loadRequests(nextPage);
   };
 
   return (
@@ -212,10 +209,7 @@ function Request() {
           <div className={styles.header}>
             <div>
               <h1>Permintaan Stok</h1>
-
-              <p>
-                Kelola permintaan stok dari pengguna.
-              </p>
+              <p>Kelola permintaan stok dari pengguna.</p>
             </div>
 
             <div className={styles.headerActions}>
@@ -234,13 +228,14 @@ function Request() {
                 variant="primary"
                 icon={Plus}
                 onClick={() => setShowForm(true)}
+                disabled={loading}
               >
                 Buat Request
               </Button>
             </div>
           </div>
 
-          {loading ? (
+          {loading && requests.length === 0 ? (
             <Loading
               size="medium"
               text="Memuat request..."
@@ -254,40 +249,23 @@ function Request() {
               onPageChange={handlePageChange}
               onView={handleView}
               onApprove={(request) =>
-                handleAction(
-                  "approve",
-                  request
-                )
+                handleAction("approve", request)
               }
               onReject={(request) =>
-                handleAction(
-                  "reject",
-                  request
-                )
+                handleAction("reject", request)
               }
             />
           )}
 
           <RequestDetail
-            isOpen={
-              Boolean(selectedRequest) &&
-              !action
-            }
-            onClose={() =>
-              setSelectedRequest(null)
-            }
+            isOpen={Boolean(selectedRequest) && !action}
+            onClose={() => setSelectedRequest(null)}
             request={selectedRequest}
             onApprove={() =>
-              handleAction(
-                "approve",
-                selectedRequest
-              )
+              handleAction("approve", selectedRequest)
             }
             onReject={() =>
-              handleAction(
-                "reject",
-                selectedRequest
-              )
+              handleAction("reject", selectedRequest)
             }
           />
 
@@ -306,13 +284,9 @@ function Request() {
           {showForm && (
             <RequestForm
               products={products}
-              loading={
-                productLoading || loading
-              }
+              loading={productLoading || loading}
               onSubmit={handleCreateRequest}
-              onCancel={() =>
-                setShowForm(false)
-              }
+              onCancel={() => setShowForm(false)}
             />
           )}
         </main>

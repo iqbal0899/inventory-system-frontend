@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Check, X } from "lucide-react";
 
 import Button from "../common/button";
@@ -14,22 +15,28 @@ function RequestAction({
   loading = false,
   onConfirm,
 }) {
+  const [reason, setReason] = useState("");
+  const [error, setError] = useState("");
+
+  const isApprove = action === "approve";
+
+  useEffect(() => {
+    if (isOpen) {
+      setReason("");
+      setError("");
+    }
+  }, [isOpen, action, request?.id]);
+
   if (!request) {
     return null;
   }
 
-  const isApprove = action === "approve";
-
-  const items =
-    request.items ||
-    request.requestItems ||
-    [];
+  const items = request.items || request.requestItems || [];
 
   const totalQuantity =
     items.length > 0
       ? items.reduce(
-          (total, item) =>
-            total + Number(item.quantity || 0),
+          (total, item) => total + Number(item.quantity || 0),
           0
         )
       : Number(request.quantity || 0);
@@ -39,24 +46,30 @@ function RequestAction({
       ? items
           .map(
             (item) =>
-              item.product?.name ||
-              item.productName ||
-              "-"
+              item.product?.name || item.productName || "-"
           )
           .join(", ")
-      : request.product?.name ||
-        request.product ||
-        "-";
+      : request.product?.name || request.product || "-";
+
+  const handleConfirm = () => {
+    if (loading) {
+      return;
+    }
+
+    if (!isApprove && !reason.trim()) {
+      setError("Alasan penolakan wajib diisi.");
+      return;
+    }
+
+    setError("");
+    onConfirm?.(isApprove ? undefined : reason.trim());
+  };
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={
-        isApprove
-          ? "Setujui Request"
-          : "Tolak Request"
-      }
+      title={isApprove ? "Setujui Request" : "Tolak Request"}
       size="small"
     >
       {loading ? (
@@ -67,11 +80,7 @@ function RequestAction({
       ) : (
         <div className={styles.content}>
           <div className={styles.icon}>
-            {isApprove ? (
-              <Check size={24} />
-            ) : (
-              <X size={24} />
-            )}
+            {isApprove ? <Check size={24} /> : <X size={24} />}
           </div>
 
           <h3>
@@ -82,14 +91,11 @@ function RequestAction({
 
           <p>
             Request{" "}
-            <strong>{request.id}</strong>{" "}
-            untuk produk{" "}
-            <strong>{productNames}</strong>{" "}
-            sebanyak{" "}
             <strong>
-              {totalQuantity} unit
-            </strong>
-            .
+              {request.requestNumber || request.id}
+            </strong>{" "}
+            untuk produk <strong>{productNames}</strong>{" "}
+            sebanyak <strong>{totalQuantity} unit</strong>.
           </p>
 
           {items.length > 1 && (
@@ -97,10 +103,7 @@ function RequestAction({
               {items.map((item, index) => (
                 <div
                   className={styles.item}
-                  key={
-                    item.id ||
-                    `${item.productId}-${index}`
-                  }
+                  key={item.id || `${item.productId}-${index}`}
                 >
                   <span>
                     {item.product?.name ||
@@ -110,11 +113,49 @@ function RequestAction({
 
                   <strong>
                     {item.quantity ?? 0}{" "}
-                    {item.product?.unit ||
-                      "pcs"}
+                    {item.product?.unit || "pcs"}
                   </strong>
                 </div>
               ))}
+            </div>
+          )}
+
+          {!isApprove && (
+            <div className={styles.reasonField}>
+              <label
+                className={styles.reasonLabel}
+                htmlFor="rejection-reason"
+              >
+                Alasan Penolakan
+                <span className={styles.required}>*</span>
+              </label>
+
+              <textarea
+                id="rejection-reason"
+                className={styles.reasonInput}
+                value={reason}
+                onChange={(event) => {
+                  setReason(event.target.value);
+
+                  if (event.target.value.trim()) {
+                    setError("");
+                  }
+                }}
+                placeholder="Masukkan alasan penolakan request..."
+                rows={4}
+                maxLength={500}
+                required
+              />
+
+              {error && (
+                <p className={styles.reasonError}>
+                  {error}
+                </p>
+              )}
+
+              <span className={styles.reasonHint}>
+                {reason.length}/500 karakter
+              </span>
             </div>
           )}
 
@@ -123,25 +164,18 @@ function RequestAction({
               type="button"
               variant="outline"
               onClick={onClose}
+              disabled={loading}
             >
               Batal
             </Button>
 
             <Button
               type="button"
-              variant={
-                isApprove
-                  ? "success"
-                  : "danger"
-              }
+              variant={isApprove ? "success" : "danger"}
               loading={loading}
-              onClick={() =>
-                onConfirm?.(request)
-              }
+              onClick={handleConfirm}
             >
-              {isApprove
-                ? "Setujui"
-                : "Tolak"}
+              {isApprove ? "Setujui" : "Tolak"}
             </Button>
           </div>
         </div>

@@ -6,7 +6,27 @@ import Loading from "../../components/common/loading";
 import ProductTable from "../../components/products/productTable";
 import ProductModal from "../../components/products/productModal";
 import Sidebar from "../../components/layout/sidebar";
-import Navbar from "../../components/layout/navbar";
+import Navbar from "../../components/layout/navbar";<select
+  name="category"
+  value={formData.category || ""}
+  onChange={(e) =>
+    setFormData((prev) => ({
+      ...prev,
+      category: e.target.value,
+    }))
+  }
+>
+  <option value="">Pilih kategori</option>
+
+  {categories.map((category) => (
+    <option
+      key={category.id}
+      value={category.name}
+    >
+      {category.name}
+    </option>
+  ))}
+</select>
 
 import {
   getProducts,

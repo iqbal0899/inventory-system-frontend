@@ -247,6 +247,39 @@
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
 }
 
+.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+  transform: none;
+}
+
+.disabled:hover {
+  background: transparent;
+  color: #687186;
+}
+
+.comingSoon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-left: auto;
+  padding: 3px 6px;
+  border: 1px solid #e2e8f0;
+  border-radius: 5px;
+  background: #f70303;
+  color: #fcfcfc;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.collapsed .comingSoon {
+  display: none;
+}
+
 @media (max-width: 768px) {
   .sidebar {
     width: 70px;
