@@ -20,24 +20,15 @@ function StockHistory() {
       setLoading(true);
       setError("");
 
-      const response =
-        await getStockMovements({
-          page: currentPage,
-          limit: 10,
-        });
+      const response = await getStockMovements({
+        page: currentPage,
+        limit: 10,
+      });
 
-      setMovements(
-        response?.data || []
-      );
-
-      setTotalPages(
-        response?.pagination?.totalPages || 1
-      );
+      setMovements(response?.data || []);
+      setTotalPages(response?.pagination?.totalPages || 1);
     } catch (error) {
-      console.error(
-        "Gagal mengambil riwayat stok:",
-        error
-      );
+      console.error("Gagal mengambil riwayat stok:", error);
 
       setMovements([]);
       setTotalPages(1);
@@ -68,16 +59,16 @@ function StockHistory() {
       label: "Tanggal",
       render: (movement) =>
         movement.createdAt
-          ? new Date(
-              movement.createdAt
-            ).toLocaleString("id-ID")
+          ? new Date(movement.createdAt).toLocaleString("id-ID")
           : "-",
     },
     {
       key: "product",
       label: "Produk",
       render: (movement) =>
-        movement.product?.name || "-",
+        typeof movement.product === "string"
+          ? movement.product
+          : movement.product?.name || movement.name || "-",
     },
     {
       key: "type",
@@ -86,16 +77,10 @@ function StockHistory() {
       render: (movement) => (
         <span
           className={`${styles.type} ${
-            styles[
-              movement.type?.toLowerCase()
-            ] || ""
+            styles[movement.type?.toLowerCase()] || ""
           }`}
         >
-          {movementLabels[
-            movement.type
-          ] ||
-            movement.type ||
-            "-"}
+          {movementLabels[movement.type] || movement.type || "-"}
         </span>
       ),
     },
@@ -103,22 +88,18 @@ function StockHistory() {
       key: "stockBefore",
       label: "Sebelum",
       align: "center",
-      render: (movement) =>
-        movement.stockBefore ?? "-",
+      render: (movement) => movement.stockBefore ?? "-",
     },
     {
       key: "quantity",
       label: "Perubahan",
       align: "center",
       render: (movement) => {
-        const quantity = Number(
-          movement.quantity ?? 0
-        );
+        const quantity = Number(movement.quantity ?? 0);
 
         const isDecrease =
           movement.type === "OUT" ||
-          (movement.type === "ADJUSTMENT" &&
-            quantity < 0);
+          (movement.type === "ADJUSTMENT" && quantity < 0);
 
         if (quantity === 0) {
           return "0";
@@ -127,9 +108,7 @@ function StockHistory() {
         return (
           <span
             className={
-              isDecrease
-                ? styles.decrease
-                : styles.increase
+              isDecrease ? styles.decrease : styles.increase
             }
           >
             {isDecrease ? "-" : "+"}
@@ -142,27 +121,28 @@ function StockHistory() {
       key: "stockAfter",
       label: "Sesudah",
       align: "center",
-      render: (movement) =>
-        movement.stockAfter ?? "-",
+      render: (movement) => movement.stockAfter ?? "-",
     },
     {
       key: "user",
       label: "Oleh",
       render: (movement) =>
-        movement.user?.username || "-",
+        typeof movement.user === "string"
+          ? movement.user
+          : movement.user?.username || movement.username || "-",
     },
     {
-      key: "request",
+      key: "requestNumber",
       label: "Kode Request",
       render: (movement) =>
+        movement.requestNumber ||
         movement.request?.requestNumber ||
         "-",
     },
     {
       key: "note",
       label: "Keterangan",
-      render: (movement) =>
-        movement.note || "-",
+      render: (movement) => movement.note || "-",
     },
   ];
 

@@ -5,9 +5,9 @@ import {
   RefreshCw,
 } from "lucide-react";
 
+import axiosApi from "../../services/axiosApi";
 import Button from "../../components/common/button";
 import Loading from "../../components/common/loading";
-
 import Sidebar from "../../components/layout/sidebar";
 import Navbar from "../../components/layout/navbar";
 
@@ -16,196 +16,159 @@ import styles from "../../css/reports.module.css";
 function Reports() {
   const [collapsed, setCollapsed] = useState(false);
   const [loading, setLoading] = useState(false);
-
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-
   const [reportData, setReportData] = useState([]);
+  const [hasSearched, setHasSearched] = useState(false);
 
-  const formatCurrency = (value) => {
-    return new Intl.NumberFormat("id-ID", {
+  const formatCurrency = (value) =>
+    new Intl.NumberFormat("id-ID", {
       style: "currency",
       currency: "IDR",
       maximumFractionDigits: 0,
-    }).format(value);
+    }).format(Number(value) || 0);
+
+  const formatDate = (value) => {
+    if (!value) return "-";
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) return "-";
+
+    return new Intl.DateTimeFormat("id-ID", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    }).format(date);
   };
 
-  const handleFilter = () => {
+  const handleFilter = async () => {
     if (!startDate || !endDate) {
-      alert(
-        "Silakan pilih tanggal mulai dan tanggal akhir."
-      );
+      alert("Silakan pilih tanggal mulai dan tanggal akhir.");
       return;
     }
 
     if (startDate > endDate) {
-      alert(
-        "Tanggal akhir tidak boleh lebih kecil dari tanggal mulai."
-      );
+      alert("Tanggal akhir tidak boleh lebih kecil dari tanggal mulai.");
       return;
     }
 
     setLoading(true);
+    setHasSearched(true);
+    setReportData([]);
 
-    // Data sementara untuk testing tampilan laporan.
-    // Nantinya bisa diganti dengan data dari API backend.
-    setTimeout(() => {
-      const dummyData = [
-        {
-          id: 1,
-          code: "PRD-001",
-          name: "Laptop ASUS",
-          supplier: "PT ASUS Indonesia",
-          price: 8500000,
-          stockBefore: 10,
-          stockAdded: 5,
-          stockAfter: 15,
-          currentStock: 15,
+    try {
+      const response = await axiosApi.get("/stock/movements", {
+        params: {
+          page: 1,
+          limit: 1000,
+          type: "OUT",
+          startDate,
+          endDate,
         },
-        {
-          id: 2,
-          code: "PRD-002",
-          name: "Mouse Logitech",
-          supplier: "PT Logitech Indonesia",
-          price: 250000,
-          stockBefore: 25,
-          stockAdded: 10,
-          stockAfter: 35,
-          currentStock: 35,
-        },
-        {
-          id: 3,
-          code: "PRD-003",
-          name: "Keyboard Mechanical",
-          supplier: "PT Digital Store",
-          price: 750000,
-          stockBefore: 12,
-          stockAdded: 8,
-          stockAfter: 20,
-          currentStock: 20,
-        },
-        {
-          id: 4,
-          code: "PRD-004",
-          name: "Monitor 24 Inch",
-          supplier: "PT Monitor Indonesia",
-          price: 1850000,
-          stockBefore: 8,
-          stockAdded: 5,
-          stockAfter: 13,
-          currentStock: 13,
-        },
-        {
-          id: 5,
-          code: "PRD-005",
-          name: "Kabel HDMI",
-          supplier: "PT Elektronik Jaya",
-          price: 85000,
-          stockBefore: 40,
-          stockAdded: 10,
-          stockAfter: 50,
-          currentStock: 50,
-        },
-      ];
+      });
 
-      setReportData(dummyData);
+      const result = response.data;
+
+      if (!result.success) {
+        throw new Error(result.message || "Gagal mengambil laporan.");
+      }
+
+      const movements = Array.isArray(result.data)
+        ? result.data
+        : [];
+
+      setReportData(
+        movements.map((movement) => ({
+          ...movement,
+          stockAdded: Number(movement.stockAdded) || 0,
+          stockReduced:
+            Number(movement.stockReduced ?? movement.quantity) || 0,
+          stockBefore: Number(movement.stockBefore) || 0,
+          stockAfter: Number(movement.stockAfter) || 0,
+          currentStock: Number(movement.currentStock) || 0,
+          price: Number(movement.price) || 0,
+        }))
+      );
+    } catch (error) {
+      console.error("Gagal mengambil laporan inventory:", error);
+
+      setReportData([]);
+
+      alert(
+        error.response?.data?.message ||
+          error.message ||
+          "Gagal mengambil data laporan."
+      );
+    } finally {
       setLoading(false);
-    }, 700);
+    }
   };
 
   const handleReset = () => {
     setStartDate("");
     setEndDate("");
     setReportData([]);
+    setHasSearched(false);
   };
 
   const handleDownload = () => {
-    if (!startDate || !endDate) {
-      alert(
-        "Silakan pilih tanggal mulai dan tanggal akhir."
-      );
-      return;
-    }
-
-    if (startDate > endDate) {
-      alert(
-        "Tanggal akhir tidak boleh lebih kecil dari tanggal mulai."
-      );
-      return;
-    }
-
     if (reportData.length === 0) {
-      alert(
-        "Belum ada data laporan. Silakan tampilkan laporan terlebih dahulu."
-      );
+      alert("Tidak ada data laporan untuk diunduh.");
       return;
     }
 
     const headers = [
       "No.",
+      "Tanggal Stok Keluar",
       "Kode Produk",
       "Nama Produk",
       "Supplier",
       "Harga Satuan",
       "Stok Sebelum",
       "Stok Ditambah",
+      "Stok Dikurang",
       "Stok Sesudah",
       "Stok Saat Ini",
     ];
 
     const rows = reportData.map((product, index) => [
       index + 1,
+      formatDate(product.date),
       product.code,
       product.name,
       product.supplier,
       product.price,
       product.stockBefore,
       product.stockAdded,
+      product.stockReduced,
       product.stockAfter,
       product.currentStock,
     ]);
 
-    const csvContent = [
-      headers,
-      ...rows,
-    ]
+    const csvContent = [headers, ...rows]
       .map((row) =>
         row
           .map((value) => {
-            const stringValue = String(value ?? "");
-
-            return `"${stringValue.replace(
-              /"/g,
-              '""'
-            )}"`;
+            const text = String(value ?? "");
+            return `"${text.replace(/"/g, '""')}"`;
           })
           .join(",")
       )
-      .join("\n");
+      .join("\r\n");
 
-    // BOM supaya karakter Indonesia terbaca
-    // dengan baik oleh Microsoft Excel.
-    const BOM = "\uFEFF";
-
-    const blob = new Blob(
-      [BOM + csvContent],
-      {
-        type: "text/csv;charset=utf-8;",
-      }
-    );
+    const blob = new Blob(["\uFEFF", csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
 
     const url = URL.createObjectURL(blob);
-
     const link = document.createElement("a");
 
     link.href = url;
     link.download = `laporan-inventory-${startDate}-sd-${endDate}.csv`;
 
     document.body.appendChild(link);
-
     link.click();
-
-    document.body.removeChild(link);
+    link.remove();
 
     URL.revokeObjectURL(url);
   };
@@ -225,14 +188,11 @@ function Reports() {
         <Navbar />
 
         <main className={styles.page}>
-          {/* HEADER */}
           <div className={styles.header}>
             <div>
               <h1>Laporan Inventory</h1>
-
               <p>
-                Laporan stok produk berdasarkan
-                periode tertentu.
+                Laporan pergerakan stok produk berdasarkan tanggal stok keluar.
               </p>
             </div>
 
@@ -241,13 +201,12 @@ function Reports() {
               variant="outline"
               icon={Download}
               onClick={handleDownload}
-              disabled={reportData.length === 0}
+              disabled={reportData.length === 0 || loading}
             >
               Unduh Laporan
             </Button>
           </div>
 
-          {/* FILTER */}
           <section className={styles.filterCard}>
             <div className={styles.filterHeader}>
               <div className={styles.filterTitle}>
@@ -255,10 +214,8 @@ function Reports() {
 
                 <div>
                   <h2>Filter Periode</h2>
-
                   <p>
-                    Pilih periode laporan yang ingin
-                    ditampilkan.
+                    Pilih rentang tanggal terjadinya stok keluar.
                   </p>
                 </div>
               </div>
@@ -267,6 +224,7 @@ function Reports() {
                 type="button"
                 className={styles.resetButton}
                 onClick={handleReset}
+                disabled={loading}
               >
                 Reset
               </button>
@@ -274,34 +232,26 @@ function Reports() {
 
             <div className={styles.filterForm}>
               <div className={styles.dateField}>
-                <label htmlFor="startDate">
-                  Tanggal Mulai
-                </label>
-
+                <label htmlFor="startDate">Tanggal Mulai</label>
                 <input
                   id="startDate"
                   type="date"
                   value={startDate}
                   max={endDate || undefined}
-                  onChange={(event) =>
-                    setStartDate(event.target.value)
-                  }
+                  onChange={(event) => setStartDate(event.target.value)}
+                  disabled={loading}
                 />
               </div>
 
               <div className={styles.dateField}>
-                <label htmlFor="endDate">
-                  Tanggal Akhir
-                </label>
-
+                <label htmlFor="endDate">Tanggal Akhir</label>
                 <input
                   id="endDate"
                   type="date"
                   value={endDate}
                   min={startDate || undefined}
-                  onChange={(event) =>
-                    setEndDate(event.target.value)
-                  }
+                  onChange={(event) => setEndDate(event.target.value)}
+                  disabled={loading}
                 />
               </div>
 
@@ -311,19 +261,18 @@ function Reports() {
                   variant="primary"
                   icon={RefreshCw}
                   onClick={handleFilter}
+                  disabled={loading}
                 >
-                  Tampilkan
+                  {loading ? "Memuat..." : "Tampilkan"}
                 </Button>
               </div>
             </div>
           </section>
 
-          {/* REPORT TABLE */}
           <section className={styles.reportCard}>
             <div className={styles.reportHeader}>
               <div>
                 <h2>Data Laporan</h2>
-
                 <p>
                   {startDate && endDate
                     ? `Periode ${startDate} s/d ${endDate}`
@@ -332,7 +281,7 @@ function Reports() {
               </div>
 
               <span className={styles.totalData}>
-                {reportData.length} Produk
+                {reportData.length} Data
               </span>
             </div>
 
@@ -349,12 +298,14 @@ function Reports() {
                   <thead>
                     <tr>
                       <th>No.</th>
+                      <th>Tanggal Keluar</th>
                       <th>Kode Produk</th>
                       <th>Nama Produk</th>
                       <th>Supplier</th>
                       <th>Harga Satuan</th>
                       <th>Stok Sebelum</th>
                       <th>Stok Ditambah</th>
+                      <th>Stok Dikurang</th>
                       <th>Stok Sesudah</th>
                       <th>Stok Saat Ini</th>
                     </tr>
@@ -363,59 +314,32 @@ function Reports() {
                   <tbody>
                     {reportData.length === 0 ? (
                       <tr>
-                        <td
-                          colSpan="9"
-                          className={styles.empty}
-                        >
-                          Belum ada data laporan.
+                        <td colSpan={11} className={styles.empty}>
+                          {hasSearched
+                            ? "Tidak ada pergerakan stok keluar pada periode ini."
+                            : "Silakan pilih periode dan tampilkan laporan."}
                         </td>
                       </tr>
                     ) : (
-                      reportData.map(
-                        (product, index) => (
-                          <tr key={product.id}>
-                            <td>{index + 1}</td>
-
-                            <td>
-                              <strong>
-                                {product.code}
-                              </strong>
-                            </td>
-
-                            <td>
-                              {product.name}
-                            </td>
-
-                            <td>
-                              {product.supplier}
-                            </td>
-
-                            <td>
-                              {formatCurrency(
-                                product.price
-                              )}
-                            </td>
-
-                            <td>
-                              {product.stockBefore}
-                            </td>
-
-                            <td>
-                              {product.stockAdded}
-                            </td>
-
-                            <td>
-                              {product.stockAfter}
-                            </td>
-
-                            <td>
-                              <strong>
-                                {product.currentStock}
-                              </strong>
-                            </td>
-                          </tr>
-                        )
-                      )
+                      reportData.map((product, index) => (
+                        <tr key={`${product.id}-${product.date || index}`}>
+                          <td>{index + 1}</td>
+                          <td>{formatDate(product.date)}</td>
+                          <td>
+                            <strong>{product.code || "-"}</strong>
+                          </td>
+                          <td>{product.name || "-"}</td>
+                          <td>{product.supplier || "-"}</td>
+                          <td>{formatCurrency(product.price)}</td>
+                          <td>{product.stockBefore}</td>
+                          <td>{product.stockAdded}</td>
+                          <td>{product.stockReduced}</td>
+                          <td>{product.stockAfter}</td>
+                          <td>
+                            <strong>{product.currentStock}</strong>
+                          </td>
+                        </tr>
+                      ))
                     )}
                   </tbody>
                 </table>
@@ -429,4 +353,3 @@ function Reports() {
 }
 
 export default Reports;
-

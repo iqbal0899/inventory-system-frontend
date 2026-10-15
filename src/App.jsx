@@ -16,6 +16,7 @@ import Supplier from "./pages/suppliers/suppliers";
 import SupplierDetail from "./pages/suppliers/supplierDetail";
 import Report from "./pages/reports/reports";
 import Users from "./pages/users/users";
+import Purchase from "./pages/purchase/purchase";
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -125,6 +126,15 @@ function App() {
     </ProtectedRoute>
   }
 />
+
+<Route
+          path="/purchases"
+          element={
+            <ProtectedRoute>
+              <Purchase />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </BrowserRouter>
   );

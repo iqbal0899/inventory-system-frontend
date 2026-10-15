@@ -19,20 +19,15 @@ import styles from "../../css/stock.module.css";
 
 function Stock() {
   const [collapsed, setCollapsed] = useState(false);
-
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [adjustmentLoading, setAdjustmentLoading] =
-    useState(false);
+  const [adjustmentLoading, setAdjustmentLoading] = useState(false);
   const [error, setError] = useState("");
-
-  const [selectedProduct, setSelectedProduct] =
-    useState(null);
-  const [adjustmentOpen, setAdjustmentOpen] =
-    useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [adjustmentOpen, setAdjustmentOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
-
   const [currentPage, setCurrentPage] = useState(1);
+
   const itemsPerPage = 10;
 
   const totalPages = Math.max(
@@ -47,15 +42,19 @@ function Stock() {
 
       const response = await getStocks();
 
-      setProducts(response?.data || []);
+      const stocks = Array.isArray(response?.data)
+        ? response.data
+        : Array.isArray(response?.data?.data)
+          ? response.data.data
+          : Array.isArray(response)
+            ? response
+            : [];
+
+      setProducts(stocks);
+      setCurrentPage(1);
     } catch (error) {
-      console.error(
-        "Gagal mengambil data stok:",
-        error
-      );
-
+      console.error("Gagal mengambil data stok:", error);
       setProducts([]);
-
       setError(
         error?.response?.data?.message ||
           "Gagal memuat data stok."
@@ -84,16 +83,25 @@ function Stock() {
       setAdjustmentLoading(true);
       setError("");
 
+      const payload = {
+        quantity: Number(data.quantity),
+        note: data.note || "",
+      };
+
+      if (
+        !data.productId ||
+        !Number.isFinite(payload.quantity) ||
+        payload.quantity <= 0
+      ) {
+        throw new Error("Produk dan jumlah stok harus valid.");
+      }
+
       if (data.type === "add") {
-        await stockIn(data.productId, {
-          quantity: data.quantity,
-          note: data.note,
-        });
+        await stockIn(data.productId, payload);
+      } else if (data.type === "reduce") {
+        await stockOut(data.productId, payload);
       } else {
-        await stockOut(data.productId, {
-          quantity: data.quantity,
-          note: data.note,
-        });
+        throw new Error("Jenis penyesuaian stok tidak valid.");
       }
 
       setAdjustmentOpen(false);
@@ -108,6 +116,7 @@ function Stock() {
 
       setError(
         error?.response?.data?.message ||
+          error.message ||
           "Gagal melakukan penyesuaian stok."
       );
     } finally {
@@ -141,9 +150,7 @@ function Stock() {
           <div className={styles.header}>
             <div>
               <h1>Stok</h1>
-              <p>
-                Pantau dan sesuaikan stok produk.
-              </p>
+              <p>Pantau dan sesuaikan stok produk.</p>
             </div>
 
             <Button
@@ -190,7 +197,7 @@ function Stock() {
                 <div>
                   <span>Produk</span>
                   <strong>
-                    {selectedProduct.name}
+                    {selectedProduct.name || "-"}
                   </strong>
                 </div>
 
@@ -202,7 +209,14 @@ function Stock() {
                 </div>
 
                 <div>
-                  <span>Stok</span>
+                  <span>Supplier</span>
+                  <strong>
+                    {selectedProduct.supplier?.name || "-"}
+                  </strong>
+                </div>
+
+                <div>
+                  <span>Stok Saat Ini</span>
                   <strong>
                     {selectedProduct.stock ?? 0} unit
                   </strong>
@@ -212,7 +226,6 @@ function Stock() {
                   type="button"
                   variant="primary"
                   icon={SlidersHorizontal}
-                  fullWidth
                   onClick={handleAdjustment}
                 >
                   Sesuaikan Stok

@@ -72,16 +72,20 @@ function RequestTable({
     return Number(request.quantity || 0);
   };
 
-  const getRequester = (request) => {
-    return (
-      request.createdBy?.username ||
-      request.requester?.username ||
-      request.user?.username ||
-      request.requester ||
-      request.user ||
-      "-"
-    );
-  };
+  
+const getRequester = (request) => {
+  return (
+    request.requesterUsername ||
+    request.posRequester?.username ||
+    request.createdBy?.username ||
+    request.requester?.username ||
+    request.user?.username ||
+    request.requester ||
+    request.user ||
+    "-"
+  );
+};
+
 
   const getDate = (request) => {
     const date =

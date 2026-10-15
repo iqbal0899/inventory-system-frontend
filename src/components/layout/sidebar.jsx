@@ -21,20 +21,15 @@ const menuItems = [
   { label: "Stok", icon: Boxes, path: "/stock" },
   { label: "Permintaan Kasir", icon: ClipboardList, path: "/requests" },
   { label: "Supplier", icon: Truck, path: "/suppliers" },
-  {
-    label: "Pembelian",
-    icon: ShoppingCart,
-    path: "/purchases",
-    disabled: true,
-  },
   { label: "Laporan", icon: FileText, path: "/reports" },
+  { label: "Data User", icon: Users, path: "/users" },
+  { label: "Pembelian", icon: ShoppingCart, path: "/purchases",},
   {
     label: "Audit Log",
     icon: History,
     path: "/audit-logs",
     disabled: true,
   },
-  { label: "Data User", icon: Users, path: "/users" },
 ];
 
 function Sidebar({ collapsed, setCollapsed }) {
