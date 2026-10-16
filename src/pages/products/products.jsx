@@ -297,15 +297,6 @@ function Products() {
                 inventory.
               </p>
             </div>
-
-            <Button
-              type="button"
-              variant="primary"
-              icon={Plus}
-              onClick={handleAdd}
-            >
-              Tambah Produk
-            </Button>
           </div>
 
           {/* ================================= */}

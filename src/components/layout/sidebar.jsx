@@ -19,11 +19,11 @@ const menuItems = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
   { label: "Produk", icon: Package, path: "/products" },
   { label: "Stok", icon: Boxes, path: "/stock" },
+  { label: "Pembelian", icon: ShoppingCart, path: "/purchases",},
   { label: "Permintaan Kasir", icon: ClipboardList, path: "/requests" },
   { label: "Supplier", icon: Truck, path: "/suppliers" },
   { label: "Laporan", icon: FileText, path: "/reports" },
   { label: "Data User", icon: Users, path: "/users" },
-  { label: "Pembelian", icon: ShoppingCart, path: "/purchases",},
   {
     label: "Audit Log",
     icon: History,

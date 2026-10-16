@@ -1,4 +1,10 @@
-import { Eye, PackageCheck, XCircle } from "lucide-react";
+
+import {
+  Eye,
+  PackageCheck,
+  XCircle,
+  LoaderCircle,
+} from "lucide-react";
 
 import Button from "../common/button";
 import Table from "../common/table";
@@ -11,6 +17,7 @@ function PurchaseTable({
   loading = false,
   currentPage = 1,
   totalPages = 1,
+  processingId = null,
   onPageChange,
   onView,
   onReceive,
@@ -71,10 +78,66 @@ function PurchaseTable({
         <strong className={styles.code}>
           {purchase.code ||
             purchase.purchaseNumber ||
-            (purchase.id ? `PO-${String(purchase.id).padStart(6, "0")}` : "-")}
+            (purchase.id
+              ? `PO-${String(purchase.id).padStart(6, "0")}`
+              : "-")}
         </strong>
       ),
     },
+
+     
+{
+  key: "products",
+  label: "Produk",
+  render: (purchase) => {
+    const items = purchase.items || purchase.purchaseItems || [];
+
+    if (items.length === 0) {
+      return <span>-</span>;
+    }
+
+    return (
+      <div className={styles.products}>
+        {items.map((item, index) => {
+          const product = item.product || {};
+
+          return (
+            <div
+              key={item.id || item.productId || index}
+              className={styles.product}
+            >
+              {product.image ? (
+                <img
+                  src={product.image}
+                  alt={product.name || "Produk"}
+                  className={styles.image}
+                />
+              ) : (
+                <div className={styles.imagePlaceholder}>P</div>
+              )}
+
+              <div>
+                <strong>
+                  {product.name ||
+                    item.productName ||
+                    item.name ||
+                    "Nama produk tidak tersedia"}
+                </strong>
+
+                <span>
+                  {product.code || "-"} · {item.quantity || 0}{" "}
+                  {product.unit || "unit"}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  },
+},
+
+
     {
       key: "supplier",
       label: "Supplier",
@@ -174,6 +237,8 @@ function PurchaseTable({
       render: (purchase) => {
         const status = String(purchase.status || "").toUpperCase();
         const isPending = status === "PENDING";
+        const isProcessing =
+          String(processingId) === String(purchase.id);
 
         return (
           <div className={styles.actions}>
@@ -183,6 +248,7 @@ function PurchaseTable({
               size="small"
               icon={Eye}
               onClick={() => onView?.(purchase)}
+              disabled={isProcessing}
               aria-label="Lihat pembelian"
             />
 
@@ -192,8 +258,9 @@ function PurchaseTable({
                   type="button"
                   variant="ghost"
                   size="small"
-                  icon={PackageCheck}
+                  icon={isProcessing ? LoaderCircle : PackageCheck}
                   onClick={() => onReceive?.(purchase)}
+                  disabled={isProcessing || processingId !== null}
                   aria-label="Terima barang"
                 />
 
@@ -201,8 +268,9 @@ function PurchaseTable({
                   type="button"
                   variant="ghost"
                   size="small"
-                  icon={XCircle}
+                  icon={isProcessing ? LoaderCircle : XCircle}
                   onClick={() => onCancel?.(purchase)}
+                  disabled={isProcessing || processingId !== null}
                   aria-label="Batalkan pembelian"
                 />
               </>

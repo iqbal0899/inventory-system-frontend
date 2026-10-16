@@ -145,17 +145,38 @@ function PurchaseForm({
     setError("");
   };
 
-  const handleProductChange = (event) => {
-    const productId = event.target.value;
-    setSelectedProductId(productId);
+const handleProductChange = (event) => {
+  const productId = event.target.value;
+  setSelectedProductId(productId);
 
-    const product = products.find(
-      (item) => Number(item.id) === Number(productId),
+  const product = products.find(
+    (item) => Number(item.id) === Number(productId)
+  );
+
+  if (!product) {
+    setUnitPrice("");
+    setError("");
+    return;
+  }
+
+  setUnitPrice(String(Number(product.price) || 0));
+
+  if (product.supplierId) {
+    const supplierExists = suppliers.some(
+      (supplier) => Number(supplier.id) === Number(product.supplierId)
     );
 
-    setUnitPrice(product ? String(Number(product.price) || 0) : "");
-    setError("");
-  };
+    if (supplierExists) {
+      setFormData((previous) => ({
+        ...previous,
+        supplierId: String(product.supplierId),
+      }));
+    }
+  }
+
+  setError("");
+};
+
 
   const handleAddItem = () => {
     const productId = Number(selectedProductId);

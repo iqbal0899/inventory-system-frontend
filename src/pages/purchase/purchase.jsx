@@ -5,6 +5,7 @@ import Button from "../../components/common/button";
 import Loading from "../../components/common/loading";
 import PurchaseTable from "../../components/purchases/purchaseTable";
 import PurchaseForm from "../../components/purchases/purchaseForm";
+import ProductModal from "../../components/products/productModal";
 import Sidebar from "../../components/layout/sidebar";
 import Navbar from "../../components/layout/navbar";
 
@@ -15,7 +16,12 @@ import {
   cancelPurchase,
 } from "../../services/purchaseApi";
 
-import { getProducts } from "../../services/productApi";
+import {
+  getProducts,
+  createProduct,
+  updateProduct,
+} from "../../services/productApi";
+
 import { getSuppliers } from "../../services/supplierApi";
 
 import styles from "../../css/purchase.module.css";
@@ -53,6 +59,9 @@ function Purchases() {
   const [formOpen, setFormOpen] = useState(false);
   const [cancelPurchaseId, setCancelPurchaseId] = useState(null);
   const [cancelReason, setCancelReason] = useState("");
+
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
 
   const [error, setError] = useState("");
 
@@ -98,22 +107,17 @@ function Purchases() {
           ? data.data.purchases
           : [];
 
-      const pagination =
-        data?.pagination ??
-        data?.data?.pagination ??
-        {};
+      const pagination = data?.pagination ?? data?.data?.pagination ?? {};
 
       setPurchases(list);
-      setTotalPages(
-        Math.max(Number(pagination.totalPages) || 1, 1)
-      );
+      setTotalPages(Math.max(Number(pagination.totalPages) || 1, 1));
     } catch (err) {
       console.error("Gagal mengambil data pembelian:", err);
 
       setError(
         err?.response?.data?.message ||
           err?.message ||
-          "Gagal mengambil data pembelian."
+          "Gagal mengambil data pembelian.",
       );
     } finally {
       setLoading(false);
@@ -148,16 +152,52 @@ function Purchases() {
   const handleRefresh = async () => {
     setError("");
 
-    await Promise.all([
-      loadInitialOptions(),
-      loadPurchases(currentPage),
-    ]);
+    await Promise.all([loadInitialOptions(), loadPurchases(currentPage)]);
   };
 
-  const handleAdd = () => {
+  const handleAddStock = () => {
     setError("");
     setFormOpen(true);
   };
+
+const handleAddProduct = () => {
+  setSelectedProduct(null);
+  setError("");
+  setModalOpen(true);
+};
+
+const handleSubmit = async (data) => {
+  try {
+    setSaving(true);
+    setError("");
+
+    const response = selectedProduct
+      ? await updateProduct(selectedProduct.id, data)
+      : await createProduct(data);
+
+    const result = response?.data ?? response;
+
+    if (result?.success === false) {
+      throw new Error(result.message || "Gagal menyimpan produk");
+    }
+
+    setModalOpen(false);
+    setSelectedProduct(null);
+
+    await loadProducts();
+  } catch (err) {
+    console.error("Gagal menyimpan produk:", err);
+
+    setError(
+      err?.response?.data?.message ||
+        err?.message ||
+        "Gagal menyimpan produk."
+    );
+  } finally {
+    setSaving(false);
+  }
+};
+
 
   const handleCreate = async (data) => {
     try {
@@ -190,7 +230,7 @@ function Purchases() {
     if (!purchase?.id || processingId !== null) return;
 
     const confirmed = window.confirm(
-      "Apakah kamu yakin ingin menerima pembelian ini? Stok akan ditambahkan."
+      "Apakah kamu yakin ingin menerima pembelian ini? Stok akan ditambahkan.",
     );
 
     if (!confirmed) return;
@@ -208,7 +248,7 @@ function Purchases() {
         err?.response?.data?.message ||
           err?.response?.data?.error ||
           err?.message ||
-          "Gagal menerima pembelian."
+          "Gagal menerima pembelian.",
       );
     } finally {
       setProcessingId(null);
@@ -250,7 +290,7 @@ function Purchases() {
         err?.response?.data?.message ||
           err?.response?.data?.error ||
           err?.message ||
-          "Gagal membatalkan pembelian."
+          "Gagal membatalkan pembelian.",
       );
     } finally {
       setProcessingId(null);
@@ -258,10 +298,7 @@ function Purchases() {
   };
 
   const handlePageChange = (page) => {
-    const nextPage = Math.max(
-      1,
-      Math.min(Number(page) || 1, totalPages)
-    );
+    const nextPage = Math.max(1, Math.min(Number(page) || 1, totalPages));
 
     if (nextPage !== currentPage) {
       setCurrentPage(nextPage);
@@ -278,10 +315,7 @@ function Purchases() {
       purchase.purchaseNumber ||
       `PO-${String(purchase.id || "").padStart(6, "0")}`;
 
-    const supplierName =
-      purchase.supplier?.name ||
-      purchase.supplierName ||
-      "";
+    const supplierName = purchase.supplier?.name || purchase.supplierName || "";
 
     const status = purchase.status || "";
 
@@ -294,15 +328,10 @@ function Purchases() {
 
   return (
     <div className={styles.layout}>
-      <Sidebar
-        collapsed={collapsed}
-        setCollapsed={setCollapsed}
-      />
+      <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} />
 
       <div
-        className={`${styles.mainContent} ${
-          collapsed ? styles.collapsed : ""
-        }`}
+        className={`${styles.mainContent} ${collapsed ? styles.collapsed : ""}`}
       >
         <Navbar />
 
@@ -310,9 +339,7 @@ function Purchases() {
           <div className={styles.header}>
             <div>
               <h1>Pembelian</h1>
-              <p>
-                Kelola pembelian barang dari supplier dan penerimaan stok.
-              </p>
+              <p>Kelola pembelian barang dari supplier dan penerimaan stok.</p>
             </div>
 
             <div className={styles.headerActions}>
@@ -320,10 +347,19 @@ function Purchases() {
                 type="button"
                 variant="primary"
                 icon={Plus}
-                onClick={handleAdd}
+                onClick={handleAddStock}
                 disabled={saving || loadingOptions}
               >
-                Buat Pembelian
+                Tambah Stok
+              </Button>
+
+              <Button
+                type="button"
+                variant="primary"
+                icon={Plus}
+                onClick={handleAddProduct}
+              >
+                Tambah Produk
               </Button>
             </div>
           </div>
@@ -358,23 +394,23 @@ function Purchases() {
           </div>
 
           {loading && purchases.length === 0 ? (
-            <Loading
-              size="medium"
-              text="Memuat data pembelian..."
-            />
+            <Loading size="medium" text="Memuat data pembelian..." />
           ) : (
-            <PurchaseTable
-              purchases={filteredPurchases}
-              loading={loading}
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={handlePageChange}
-              onView={(purchase) => {
-                console.log("Detail pembelian:", purchase);
-              }}
-              onReceive={handleReceive}
-              onCancel={handleOpenCancel}
-            />
+            
+<PurchaseTable
+  purchases={filteredPurchases}
+  loading={loading}
+  currentPage={currentPage}
+  totalPages={totalPages}
+  processingId={processingId}
+  onPageChange={handlePageChange}
+  onView={(purchase) => {
+    console.log("Detail pembelian:", purchase);
+  }}
+  onReceive={handleReceive}
+  onCancel={handleOpenCancel}
+/>
+
           )}
 
           {formOpen && (
@@ -383,9 +419,7 @@ function Purchases() {
                 <div className={styles.formHeader}>
                   <div>
                     <h2>Buat Pembelian</h2>
-                    <p>
-                      Pilih supplier dan masukkan barang yang akan dibeli.
-                    </p>
+                    <p>Pilih supplier dan masukkan barang yang akan dibeli.</p>
                   </div>
 
                   <button
@@ -411,10 +445,7 @@ function Purchases() {
                 )}
 
                 {loadingOptions ? (
-                  <Loading
-                    size="medium"
-                    text="Memuat produk dan supplier..."
-                  />
+                  <Loading size="medium" text="Memuat produk dan supplier..." />
                 ) : (
                   <PurchaseForm
                     products={products}
@@ -439,9 +470,7 @@ function Purchases() {
                 <div className={styles.formHeader}>
                   <div>
                     <h2>Batalkan Pembelian</h2>
-                    <p>
-                      Masukkan alasan pembatalan pembelian.
-                    </p>
+                    <p>Masukkan alasan pembatalan pembelian.</p>
                   </div>
 
                   <button
@@ -483,9 +512,7 @@ function Purchases() {
                   <textarea
                     id="cancelReason"
                     value={cancelReason}
-                    onChange={(event) =>
-                      setCancelReason(event.target.value)
-                    }
+                    onChange={(event) => setCancelReason(event.target.value)}
                     placeholder="Masukkan alasan pembatalan..."
                     rows={4}
                     disabled={processingId !== null}
@@ -532,6 +559,18 @@ function Purchases() {
               </div>
             </div>
           )}
+
+          <ProductModal
+            isOpen={modalOpen}
+            onClose={() => {
+              if (!saving) {
+                setModalOpen(false);
+              }
+            }}
+            product={selectedProduct}
+            loading={saving}
+            onSubmit={handleSubmit}
+          />
         </main>
       </div>
     </div>
