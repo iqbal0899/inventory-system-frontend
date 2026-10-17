@@ -61,7 +61,13 @@ export async function createProduct(data) {
       formData.append("supplierId", String(data.supplierId));
     }
 
-    if (data.image instanceof File) {
+    console.log("IMAGE DATA:", data.image);
+    console.log(
+      "IS FILE:",
+      typeof File !== "undefined" && data.image instanceof File
+    );
+
+    if (typeof File !== "undefined" && data.image instanceof File) {
       formData.append("image", data.image);
     }
 
@@ -73,7 +79,11 @@ export async function createProduct(data) {
 
     const response = await axiosApi.post("/products", formData);
 
-    console.log("CREATE PRODUCT RESPONSE:", response.data);
+    console.log(
+      "CREATE PRODUCT RESPONSE:",
+      JSON.stringify(response.data, null, 2)
+    );
+
     return response.data;
   } catch (error) {
     console.error("CREATE PRODUCT ERROR:", error);

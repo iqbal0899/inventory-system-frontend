@@ -132,13 +132,26 @@ function StockHistory() {
           : movement.user?.username || movement.username || "-",
     },
     {
-      key: "requestNumber",
-      label: "Kode Request",
-      render: (movement) =>
-        movement.requestNumber ||
-        movement.request?.requestNumber ||
-        "-",
-    },
+  key: "requestNumber",
+  label: "Kode Request / Nomor PO",
+  render: (movement) => {
+    if (
+      movement.requestNumber &&
+      movement.requestNumber !== "-"
+    ) {
+      return movement.requestNumber;
+    }
+
+    if (
+      movement.purchaseNumber &&
+      movement.purchaseNumber !== "-"
+    ) {
+      return movement.purchaseNumber;
+    }
+
+    return "-";
+  },
+},
     {
       key: "note",
       label: "Keterangan",
