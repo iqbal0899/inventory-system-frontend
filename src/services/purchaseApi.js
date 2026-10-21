@@ -15,7 +15,21 @@ export const getPurchaseById = async (id) => {
 };
 
 export const createPurchase = async (data) => {
-  const response = await api.post("/purchases", data);
+  const { idempotencyKey, ...purchaseData } = data;
+
+  if (!idempotencyKey) {
+    throw new Error("Idempotency key wajib disertakan.");
+  }
+
+  const response = await api.post(
+    "/purchases",
+    purchaseData,
+    {
+      headers: {
+        "Idempotency-Key": idempotencyKey,
+      },
+    }
+  );
 
   return response;
 };

@@ -6,6 +6,7 @@ import Loading from "../../components/common/loading";
 import PurchaseTable from "../../components/purchases/purchaseTable";
 import PurchaseForm from "../../components/purchases/purchaseForm";
 import ProductModal from "../../components/products/productModal";
+import PurchaseDetail from "../../components/purchases/purchaseDetail";
 import Sidebar from "../../components/layout/sidebar";
 import Navbar from "../../components/layout/navbar";
 
@@ -64,6 +65,8 @@ function Purchases() {
   const [selectedProduct, setSelectedProduct] = useState(null);
 
   const [error, setError] = useState("");
+
+  const [selectedPurchase, setSelectedPurchase] = useState(null);
 
   const loadProducts = useCallback(async () => {
     const response = await getProducts({
@@ -160,44 +163,43 @@ function Purchases() {
     setFormOpen(true);
   };
 
-const handleAddProduct = () => {
-  setSelectedProduct(null);
-  setError("");
-  setModalOpen(true);
-};
-
-const handleSubmit = async (data) => {
-  try {
-    setSaving(true);
-    setError("");
-
-    const response = selectedProduct
-      ? await updateProduct(selectedProduct.id, data)
-      : await createProduct(data);
-
-    const result = response?.data ?? response;
-
-    if (result?.success === false) {
-      throw new Error(result.message || "Gagal menyimpan produk");
-    }
-
-    setModalOpen(false);
+  const handleAddProduct = () => {
     setSelectedProduct(null);
+    setError("");
+    setModalOpen(true);
+  };
 
-    await loadProducts();
-  } catch (err) {
-    console.error("Gagal menyimpan produk:", err);
+  const handleSubmit = async (data) => {
+    try {
+      setSaving(true);
+      setError("");
 
-    setError(
-      err?.response?.data?.message ||
-        err?.message ||
-        "Gagal menyimpan produk."
-    );
-  } finally {
-    setSaving(false);
-  }
-};
+      const response = selectedProduct
+        ? await updateProduct(selectedProduct.id, data)
+        : await createProduct(data);
 
+      const result = response?.data ?? response;
+
+      if (result?.success === false) {
+        throw new Error(result.message || "Gagal menyimpan produk");
+      }
+
+      setModalOpen(false);
+      setSelectedProduct(null);
+
+      await loadProducts();
+    } catch (err) {
+      console.error("Gagal menyimpan produk:", err);
+
+      setError(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Gagal menyimpan produk.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleCreate = async (data) => {
     try {
@@ -396,21 +398,24 @@ const handleSubmit = async (data) => {
           {loading && purchases.length === 0 ? (
             <Loading size="medium" text="Memuat data pembelian..." />
           ) : (
-            
-<PurchaseTable
-  purchases={filteredPurchases}
-  loading={loading}
-  currentPage={currentPage}
-  totalPages={totalPages}
-  processingId={processingId}
-  onPageChange={handlePageChange}
-  onView={(purchase) => {
-    console.log("Detail pembelian:", purchase);
-  }}
-  onReceive={handleReceive}
-  onCancel={handleOpenCancel}
-/>
+            <PurchaseTable
+              purchases={filteredPurchases}
+              loading={loading}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              processingId={processingId}
+              onPageChange={handlePageChange}
+              onView={(purchase) => setSelectedPurchase(purchase)}
+              onReceive={handleReceive}
+              onCancel={handleOpenCancel}
+            />
+          )}
 
+          {selectedPurchase && (
+            <PurchaseDetail
+              purchase={selectedPurchase}
+              onClose={() => setSelectedPurchase(null)}
+            />
           )}
 
           {formOpen && (

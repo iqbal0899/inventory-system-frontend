@@ -34,6 +34,7 @@ const productCategories = [
 function ProductForm({
   initialData = null,
   loading = false,
+  disableStock = false,
   onSubmit,
   onCancel,
 }) {
@@ -151,75 +152,68 @@ function ProductForm({
     setError("");
   };
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
 
-    if (!formData.name.trim()) {
-      setError("Nama produk wajib diisi.");
-      return;
-    }
+const handleSubmit = async (event) => {
+  event.preventDefault();
 
-    if (!formData.category) {
-      setError("Kategori produk wajib dipilih.");
-      return;
-    }
+  if (!formData.name.trim()) {
+    setError("Nama produk wajib diisi.");
+    return;
+  }
 
-    if (
-      formData.price === "" ||
-      !Number.isFinite(Number(formData.price)) ||
-      Number(formData.price) < 0
-    ) {
-      setError("Harga produk tidak valid.");
-      return;
-    }
+  if (!formData.category) {
+    setError("Kategori produk wajib dipilih.");
+    return;
+  }
 
-    if (
-      !Number.isFinite(Number(formData.stock || 0)) ||
-      Number(formData.stock || 0) < 0
-    ) {
-      setError("Stok tidak valid.");
-      return;
-    }
+  if (
+    formData.price === "" ||
+    !Number.isFinite(Number(formData.price)) ||
+    Number(formData.price) < 0
+  ) {
+    setError("Harga produk tidak valid.");
+    return;
+  }
 
-    if (
-      !Number.isFinite(Number(formData.minStock || 0)) ||
-      Number(formData.minStock || 0) < 0
-    ) {
-      setError("Minimum stok tidak valid.");
-      return;
-    }
+  if (
+    !Number.isFinite(Number(formData.minStock || 0)) ||
+    Number(formData.minStock || 0) < 0
+  ) {
+    setError("Minimum stok tidak valid.");
+    return;
+  }
 
-    if (typeof onSubmit !== "function") {
-      setError("Fungsi submit produk tidak tersedia.");
-      return;
-    }
+  if (typeof onSubmit !== "function") {
+    setError("Fungsi submit produk tidak tersedia.");
+    return;
+  }
 
-    const productData = {
-      name: formData.name.trim(),
-      description: formData.description.trim(),
-      category: formData.category,
-      supplierId: formData.supplierId || "",
-      price: Number(formData.price),
-      stock: Number(formData.stock || 0),
-      minStock: Number(formData.minStock || 0),
-      unit: formData.unit || "pcs",
-      status: formData.status,
-      image: formData.image,
-    };
-
-    try {
-      setError("");
-      await onSubmit(productData);
-    } catch (error) {
-      console.error("SUBMIT PRODUCT ERROR:", error);
-
-      setError(
-        error?.response?.data?.message ||
-          error?.message ||
-          "Gagal menyimpan produk."
-      );
-    }
+  const productData = {
+    name: formData.name.trim(),
+    description: formData.description.trim(),
+    category: formData.category,
+    supplierId: formData.supplierId || "",
+    price: Number(formData.price),
+    minStock: Number(formData.minStock || 0),
+    unit: formData.unit || "pcs",
+    status: formData.status,
+    image: formData.image,
   };
+
+  try {
+    setError("");
+    await onSubmit(productData);
+  } catch (error) {
+    console.error("SUBMIT PRODUCT ERROR:", error);
+
+    setError(
+      error?.response?.data?.message ||
+        error?.message ||
+        "Gagal menyimpan produk."
+    );
+  }
+};
+
 
   if (loading) {
     return (
@@ -337,17 +331,19 @@ function ProductForm({
         </div>
 
         <div className={styles.formGroup}>
-          <label htmlFor="stock">Stok</label>
-          <input
-            id="stock"
-            name="stock"
-            type="number"
-            min="0"
-            value={formData.stock}
-            onChange={handleChange}
-            placeholder="Masukkan stok"
-          />
-        </div>
+  <label htmlFor="stock">Stok</label>
+  <input
+    id="stock"
+    name="stock"
+    type="number"
+    value={formData.stock ?? 0}
+    disabled
+    readOnly
+  />
+  <small>
+    Stok hanya dapat ditambahkan melalui menu Pembelian.
+  </small>
+</div>
 
         <div className={styles.formGroup}>
           <label htmlFor="minStock">Minimum Stok</label>
@@ -454,6 +450,7 @@ function ProductForm({
 ProductForm.propTypes = {
   initialData: PropTypes.object,
   loading: PropTypes.bool,
+  disableStock: PropTypes.bool,
   onSubmit: PropTypes.func.isRequired,
   onCancel: PropTypes.func,
 };

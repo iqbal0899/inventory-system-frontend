@@ -1,3 +1,4 @@
+
 import Modal from "../common/modal";
 import ProductForm from "./productForm";
 
@@ -8,6 +9,9 @@ function ProductModal({
   loading = false,
   onSubmit,
 }) {
+
+  console.log("Product:", product);
+console.log("Disable stock:", Boolean(product));
   return (
     <Modal
       isOpen={isOpen}
@@ -16,11 +20,13 @@ function ProductModal({
       size="large"
     >
       <ProductForm
-        initialData={product}
-        loading={loading}
-        onSubmit={onSubmit}
-        onCancel={onClose}
-      />
+  key={product?.id ?? "new-product"}
+  initialData={product}
+  loading={loading}
+  disableStock={Boolean(product)}
+  onSubmit={onSubmit}
+  onCancel={onClose}
+/>
     </Modal>
   );
 }

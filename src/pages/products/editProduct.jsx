@@ -142,6 +142,7 @@ function EditProduct() {
         <ProductForm
           initialData={product}
           loading={loading}
+          disableStock
           onSubmit={handleSubmit}
           onCancel={() =>
             navigate("/products")

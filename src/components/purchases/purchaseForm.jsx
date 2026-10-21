@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import PropTypes from "prop-types";
 import { Trash2, Plus } from "lucide-react";
 
@@ -41,6 +41,7 @@ function PurchaseForm({
   const [supplierLoading, setSupplierLoading] = useState(false);
   const [productLoading, setProductLoading] = useState(false);
   const [error, setError] = useState("");
+  const idempotencyKeyRef = useRef(null);
 
   useEffect(() => {
     let active = true;
@@ -283,64 +284,77 @@ const handleProductChange = (event) => {
       maximumFractionDigits: 0,
     }).format(amount);
 
-  const handleSubmit = (event) => {
-    event.preventDefault();
 
-    if (!formData.supplierId) {
-      setError("Supplier wajib dipilih.");
-      return;
-    }
+const handleSubmit = async (event) => {
+  event.preventDefault();
 
-    if (!formData.purchaseDate) {
-      setError("Tanggal pembelian wajib diisi.");
-      return;
-    }
+  if (!formData.supplierId) {
+    setError("Supplier wajib dipilih.");
+    return;
+  }
 
-    if (formData.purchaseDate > getTodayDate()) {
-      setError("Tanggal pembelian tidak boleh di masa depan.");
-      return;
-    }
+  if (!formData.purchaseDate) {
+    setError("Tanggal pembelian wajib diisi.");
+    return;
+  }
 
-    if (items.length === 0) {
-      setError("Tambahkan minimal satu produk.");
-      return;
-    }
+  if (formData.purchaseDate > getTodayDate()) {
+    setError("Tanggal pembelian tidak boleh di masa depan.");
+    return;
+  }
 
-    const invalidItem = items.some(
-      (item) =>
-        !Number.isInteger(Number(item.quantity)) ||
-        Number(item.quantity) < 1 ||
-        !Number.isFinite(Number(item.unitPrice)) ||
-        Number(item.unitPrice) < 0,
-    );
+  if (items.length === 0) {
+    setError("Tambahkan minimal satu produk.");
+    return;
+  }
 
-    if (invalidItem) {
-      setError("Periksa kembali jumlah dan harga beli setiap produk.");
-      return;
-    }
+  const invalidItem = items.some(
+    (item) =>
+      !Number.isInteger(Number(item.quantity)) ||
+      Number(item.quantity) < 1 ||
+      !Number.isFinite(Number(item.unitPrice)) ||
+      Number(item.unitPrice) < 0
+  );
 
-    if (typeof onSubmit !== "function") {
-      setError("Fungsi penyimpanan pembelian belum tersedia.");
-      return;
-    }
+  if (invalidItem) {
+    setError("Periksa kembali jumlah dan harga beli setiap produk.");
+    return;
+  }
 
-    const purchaseData = {
-      supplierId: Number(formData.supplierId),
-      purchaseDate: formData.purchaseDate,
-      note: formData.note.trim() || null,
-      items: items.map((item) => ({
-        productId: Number(item.productId),
-        quantity: Number(item.quantity),
-        unitPrice: Number(item.unitPrice),
-      })),
-    };
+  if (typeof onSubmit !== "function") {
+    setError("Fungsi penyimpanan pembelian belum tersedia.");
+    return;
+  }
 
-    onSubmit(purchaseData);
+  if (!idempotencyKeyRef.current) {
+    idempotencyKeyRef.current = crypto.randomUUID();
+  }
+
+  const purchaseData = {
+    supplierId: Number(formData.supplierId),
+    purchaseDate: formData.purchaseDate,
+    note: formData.note.trim() || null,
+    items: items.map((item) => ({
+      productId: Number(item.productId),
+      quantity: Number(item.quantity),
+      unitPrice: Number(item.unitPrice),
+    })),
+    idempotencyKey: idempotencyKeyRef.current,
   };
 
-  if (loading) {
-    return <Loading size="medium" text="Memproses pembelian..." />;
+  try {
+    setError("");
+    await onSubmit(purchaseData);
+    idempotencyKeyRef.current = null;
+  } catch (err) {
+    setError(
+      err?.response?.data?.message ||
+        err?.message ||
+        "Gagal menyimpan pembelian. Silakan coba kembali."
+    );
   }
+};
+
 
   return (
     <form className={styles.form} onSubmit={handleSubmit}>
@@ -349,26 +363,23 @@ const handleProductChange = (event) => {
       <div className={styles.formGrid}>
         <div className={styles.formGroup}>
           <label htmlFor="supplierId">Supplier</label>
-          <select
-            id="supplierId"
-            name="supplierId"
-            value={formData.supplierId}
-            onChange={handleChange}
-            disabled={supplierLoading}
-            required
-          >
-            <option value="">
-              {supplierLoading ? "Memuat supplier..." : "Pilih supplier"}
-            </option>
+<select
+  id="supplierId"
+  name="supplierId"
+  value={formData.supplierId}
+  onChange={handleChange}
+  disabled
+>
+  <option value="">Pilih supplier</option>
 
-            {suppliers.map((supplier) => (
-              <option key={supplier.id} value={supplier.id}>
-                {supplier.code
-                  ? `${supplier.code} - ${supplier.name}`
-                  : supplier.name}
-              </option>
-            ))}
-          </select>
+  {suppliers.map((supplier) => (
+    <option key={supplier.id} value={supplier.id}>
+      {supplier.code
+        ? `${supplier.code} - ${supplier.name}`
+        : supplier.name}
+    </option>
+  ))}
+</select>
 
           {!supplierLoading && suppliers.length === 0 && (
             <small>
@@ -439,7 +450,7 @@ const handleProductChange = (event) => {
               min="0"
               step="any"
               value={unitPrice}
-              onChange={(event) => setUnitPrice(event.target.value)}
+              disabled
               placeholder="Harga per satuan"
             />
           </div>
@@ -501,19 +512,13 @@ const handleProductChange = (event) => {
 
                     <td>
                       <input
-                        type="number"
-                        min="0"
-                        step="any"
-                        value={item.unitPrice}
-                        onChange={(event) =>
-                          handleItemChange(
-                            item.productId,
-                            "unitPrice",
-                            event.target.value,
-                          )
-                        }
-                        aria-label={`Harga beli ${item.name}`}
-                      />
+  type="number"
+  min="0"
+  step="any"
+  value={item.unitPrice}
+  disabled
+  aria-label={`Harga beli ${item.name}`}
+/>
                     </td>
 
                     <td>
