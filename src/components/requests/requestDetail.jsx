@@ -28,12 +28,18 @@ function RequestDetail({
     request.requestItems ||
     [];
 
-  const requester =
+  const getRequester = (request) => {
+    return (
+    request.requesterUsername ||
+    request.posRequester?.username ||
+    request.createdBy?.username ||
     request.requester?.username ||
     request.user?.username ||
     request.requester ||
     request.user ||
-    "-";
+    "-"
+  );
+  };
 
   const requestDate =
     request.date ||
@@ -62,7 +68,7 @@ function RequestDetail({
         <div className={styles.item}>
           <span>Requester</span>
           <strong>
-            {requester}
+            {getRequester(request)}
           </strong>
         </div>
 

@@ -22,6 +22,7 @@ function PurchaseTable({
   onView,
   onReceive,
   onCancel,
+  canManagePurchases = false,
 }) {
   const formatCurrency = (amount) =>
     `Rp ${Number(amount || 0).toLocaleString("id-ID")}`;
@@ -252,7 +253,7 @@ function PurchaseTable({
               aria-label="Lihat pembelian"
             />
 
-            {isPending && (
+            {canManagePurchases && purchase.status === "PENDING" && (
               <>
                 <Button
                   type="button"

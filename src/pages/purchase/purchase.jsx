@@ -24,6 +24,7 @@ import {
 } from "../../services/productApi";
 
 import { getSuppliers } from "../../services/supplierApi";
+import { useAuth } from "../../hooks/useAuth";
 
 import styles from "../../css/purchase.module.css";
 
@@ -42,6 +43,7 @@ function getList(response, key) {
 }
 
 function Purchases() {
+  const {user} = useAuth();
   const [collapsed, setCollapsed] = useState(false);
 
   const [purchases, setPurchases] = useState([]);
@@ -67,6 +69,11 @@ function Purchases() {
   const [error, setError] = useState("");
 
   const [selectedPurchase, setSelectedPurchase] = useState(null);
+
+  const canManagePurchases = [
+    "ADMIN",
+    "SUPER_ADMIN",
+  ].includes(String(user?.role ?? "").toUpperCase());
 
   const loadProducts = useCallback(async () => {
     const response = await getProducts({
@@ -408,6 +415,7 @@ function Purchases() {
               onView={(purchase) => setSelectedPurchase(purchase)}
               onReceive={handleReceive}
               onCancel={handleOpenCancel}
+              canManagePurchases={canManagePurchases}
             />
           )}
 
