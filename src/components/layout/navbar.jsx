@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -8,21 +9,37 @@ import {
   LogOut,
 } from "lucide-react";
 
+import { useAuth } from "../../hooks/useAuth";
 import styles from "../../css/navbar.module.css";
 
 function Navbar() {
   const [showMenu, setShowMenu] = useState(false);
   const navigate = useNavigate();
 
+  const { user, logout } = useAuth();
+
   const handleSettings = () => {
     setShowMenu(false);
     navigate("/settings");
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     setShowMenu(false);
+    await logout();
     navigate("/login");
   };
+
+  const userName =(
+    user?.name || user?.username|| "Pengguna").toUpperCase();
+
+  const userRole = user?.role || "Staff";
+
+  const initials = userName
+    .split(" ")
+    .map((word) => word.charAt(0))
+    .join("")
+    .substring(0, 2)
+    .toUpperCase();
 
   return (
     <header className={styles.navbar}>
@@ -53,11 +70,13 @@ function Navbar() {
               setShowMenu((previous) => !previous)
             }
           >
-            <div className={styles.avatar}>AI</div>
+            <div className={styles.avatar}>
+              {initials}
+            </div>
 
             <div className={styles.userInfo}>
-              <strong>Admin Inventory</strong>
-              <span>Administrator</span>
+              <strong>{userName}</strong>
+              <span>{userRole}</span>
             </div>
 
             <ChevronDown

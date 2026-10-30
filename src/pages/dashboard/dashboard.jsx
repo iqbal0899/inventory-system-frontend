@@ -7,6 +7,17 @@ import {
   AlertTriangle,
 } from "lucide-react";
 
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+} from "recharts";
+
 import styles from "../../css/dashboard.module.css";
 
 import Sidebar from "../../components/layout/sidebar";
@@ -289,129 +300,104 @@ function Dashboard() {
             {/* =====================
                 STOCK MOVEMENT
             ====================== */}
-            <div className={styles.chartCard}>
-              <div className={styles.cardHeader}>
-                <div>
-                  <h3>
-                    Pergerakan Stok
-                  </h3>
 
-                  <p>
-                    Aktivitas stok 7 hari terakhir
-                  </p>
-                </div>
+<div className={styles.chartCard}>
+  <div className={styles.cardHeader}>
+    <div>
+      <h3>Pergerakan Stok</h3>
+      <p>Aktivitas stok masuk dan keluar</p>
+    </div>
 
-                <select defaultValue="7">
-                  <option value="7">
-                    7 Hari
-                  </option>
+    <select defaultValue="7">
+      <option value="7">7 Hari</option>
+      <option value="30">30 Hari</option>
+      <option value="90">3 Bulan</option>
+    </select>
+  </div>
 
-                  <option value="30">
-                    30 Hari
-                  </option>
+  <div className={styles.chart}>
+    {stockMovement.length > 0 ? (
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart
+          data={stockMovement}
+          margin={{
+            top: 10,
+            right: 10,
+            left: -15,
+            bottom: 5,
+          }}
+          barGap={8}
+        >
+          <CartesianGrid
+            strokeDasharray="3 3"
+            vertical={false}
+            stroke="#e5e7eb"
+          />
 
-                  <option value="90">
-                    3 Bulan
-                  </option>
-                </select>
-              </div>
+          <XAxis
+            dataKey="day"
+            tickFormatter={(value) =>
+              value?.substring(0, 3)
+            }
+            tickLine={false}
+            axisLine={false}
+            tick={{ fontSize: 12 }}
+          />
 
-              <div className={styles.chart}>
-                <div
-                  className={
-                    styles.chartBars
-                  }
-                >
-                  {stockMovement.map(
-                    (movement) => {
-                      const maxValue =
-                        Math.max(
-                          ...stockMovement.map(
-                            (item) =>
-                              Math.max(
-                                Number(
-                                  item.stockIn
-                                ) || 0,
-                                Number(
-                                  item.stockOut
-                                ) || 0
-                              )
-                          ),
-                          1
-                        );
+          <YAxis
+            tickLine={false}
+            axisLine={false}
+            tick={{ fontSize: 12 }}
+            allowDecimals={false}
+          />
 
-                      const stockInHeight =
-                        ((Number(
-                          movement.stockIn
-                        ) || 0) /
-                          maxValue) *
-                        100;
+          <Tooltip
+            formatter={(value, name) => [
+              formatNumber(value),
+              name,
+            ]}
+            contentStyle={{
+              borderRadius: "10px",
+              border: "1px solid #e5e7eb",
+              fontSize: "13px",
+            }}
+          />
 
-                      const stockOutHeight =
-                        ((Number(
-                          movement.stockOut
-                        ) || 0) /
-                          maxValue) *
-                        100;
+          <Legend
+            verticalAlign="top"
+            align="right"
+            iconType="circle"
+            wrapperStyle={{
+              fontSize: "12px",
+              paddingBottom: "15px",
+            }}
+          />
 
-                      return (
-                        <div
-                          className={
-                            styles.barWrapper
-                          }
-                          key={
-                            movement.date
-                          }
-                        >
-                          <div
-                            className={
-                              styles.barGroup
-                            }
-                          >
-                            <div
-                              className={
-                                styles.bar
-                              }
-                              style={{
-                                height: `${Math.max(
-                                  stockInHeight,
-                                  2
-                                )}%`,
-                              }}
-                              title={`Stok masuk: ${formatNumber(
-                                movement.stockIn
-                              )}`}
-                            />
+          <Bar
+            dataKey="stockIn"
+            name="Stok Masuk"
+            fill="#2563eb"
+            radius={[5, 5, 0, 0]}
+            maxBarSize={35}
+          />
 
-                            <div
-                              className={
-                                styles.barOut
-                              }
-                              style={{
-                                height: `${Math.max(
-                                  stockOutHeight,
-                                  2
-                                )}%`,
-                              }}
-                              title={`Stok keluar: ${formatNumber(
-                                movement.stockOut
-                              )}`}
-                            />
-                          </div>
+          <Bar
+            dataKey="stockOut"
+            name="Stok Keluar"
+            fill="#f59e0b"
+            radius={[5, 5, 0, 0]}
+            maxBarSize={35}
+          />
+        </BarChart>
+      </ResponsiveContainer>
+    ) : (
+      <div className={styles.emptyState}>
+        Belum ada data pergerakan stok.
+      </div>
+    )}
+  </div>
+</div>
 
-                          <span>
-                            {movement.day?.substring(
-                              0,
-                              3
-                            )}
-                          </span>
-                        </div>
-                      );
-                    }
-                  )}
-                </div>
-              </div>
-            </div>
 
             {/* =====================
                 LOW STOCK
