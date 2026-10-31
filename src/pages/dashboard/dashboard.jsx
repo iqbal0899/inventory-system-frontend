@@ -9,8 +9,8 @@ import {
 
 import {
   ResponsiveContainer,
-  BarChart,
-  Bar,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -35,53 +35,49 @@ function Dashboard() {
 
   const [error, setError] = useState("");
 
+  const [period, setPeriod] = useState("7");
+
   /**
    * Ambil data dashboard dari API
    */
-  const fetchDashboard = async () => {
-    try {
-      setLoading(true);
-      setError("");
+  const fetchDashboard = async (selectedPeriod = period) => {
+  try {
+    setLoading(true);
+    setError("");
 
-      const response = await fetch(
-        "http://localhost:5100/api/v1/dashboard",
-        {
-          method: "GET",
-          credentials: "include",
-          cache: "no-store",
-        }
-      );
-
-      const result = await response.json();
-
-      if (!response.ok || !result.success) {
-        throw new Error(
-          result.message ||
-            "Gagal mengambil data dashboard"
-        );
+    const response = await fetch(
+      `http://localhost:5100/api/v1/dashboard?period=${selectedPeriod}`,
+      {
+        method: "GET",
+        credentials: "include",
+        cache: "no-store",
       }
+    );
 
-      setDashboardData(result.data);
-    } catch (error) {
-      console.error(
-        "Fetch dashboard error:",
-        error
-      );
+    const result = await response.json();
 
-      setError(
-        error.message ||
-          "Gagal mengambil data dashboard"
+    if (!response.ok || !result.success) {
+      throw new Error(
+        result.message || "Gagal mengambil data dashboard"
       );
-    } finally {
-      setLoading(false);
     }
-  };
 
+    setDashboardData(result.data);
+  } catch (error) {
+    console.error("Fetch dashboard error:", error);
+
+    setError(
+      error.message || "Gagal mengambil data dashboard"
+    );
+  } finally {
+    setLoading(false);
+  }
+};
   /**
    * Fetch pertama kali ketika halaman dibuka
    */
   useEffect(() => {
-    fetchDashboard();
+    fetchDashboard("7");
   }, []);
 
   /**
@@ -308,7 +304,15 @@ function Dashboard() {
       <p>Aktivitas stok masuk dan keluar</p>
     </div>
 
-    <select defaultValue="7">
+    <select 
+    value={period}
+    onChange={(e) =>{
+      const selectedPeriod= e.target.value;
+
+      setPeriod(selectedPeriod);
+      fetchDashboard(selectedPeriod);
+    }} >
+
       <option value="7">7 Hari</option>
       <option value="30">30 Hari</option>
       <option value="90">3 Bulan</option>
@@ -318,7 +322,7 @@ function Dashboard() {
   <div className={styles.chart}>
     {stockMovement.length > 0 ? (
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart
+        <LineChart
           data={stockMovement}
           margin={{
             top: 10,
@@ -335,14 +339,23 @@ function Dashboard() {
           />
 
           <XAxis
-            dataKey="day"
-            tickFormatter={(value) =>
-              value?.substring(0, 3)
-            }
-            tickLine={false}
-            axisLine={false}
-            tick={{ fontSize: 12 }}
-          />
+  dataKey="date"
+  tickFormatter={(value) => {
+    const date = new Date(`${value}T00:00:00`);
+
+    return new Intl.DateTimeFormat("id-ID", {
+      day: "2-digit",
+      month: "short",
+    }).format(date);
+  }}
+  tickLine={false}
+  axisLine={false}
+  tick={{ fontSize: 12 }}
+  interval={period === "7" ? 0 : period === "30" ? 4 : 9}
+  angle={period === "7" ? 0 : -35}
+  textAnchor={period === "7" ? "middle" : "end"}
+  height={period === "7" ? 30 : 55}
+/>
 
           <YAxis
             tickLine={false}
@@ -373,7 +386,7 @@ function Dashboard() {
             }}
           />
 
-          <Bar
+          <Line
             dataKey="stockIn"
             name="Stok Masuk"
             fill="#2563eb"
@@ -381,14 +394,14 @@ function Dashboard() {
             maxBarSize={35}
           />
 
-          <Bar
+          <Line
             dataKey="stockOut"
             name="Stok Keluar"
             fill="#f59e0b"
             radius={[5, 5, 0, 0]}
             maxBarSize={35}
           />
-        </BarChart>
+        </LineChart>
       </ResponsiveContainer>
     ) : (
       <div className={styles.emptyState}>

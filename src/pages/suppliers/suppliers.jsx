@@ -27,6 +27,7 @@ function Suppliers() {
   const [suppliers, setSuppliers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [collapsed, setCollapsed] = useState("");
 
   const [selectedSupplier, setSelectedSupplier] =
     useState(null);
@@ -205,7 +206,9 @@ function Suppliers() {
       <Navbar />
 
       {/* SIDEBAR */}
-      <Sidebar />
+      <Sidebar
+        collapsed={collapsed}
+        setCollapsed={setCollapsed} />
 
       {/* MAIN CONTENT */}
       <div className={styles.mainContent}>
